@@ -56,6 +56,48 @@ export const LandingPage = ({ onNavigateToArena }) => {
     );
   };
 
+  // 14 columns x 13 rows programmatically mapped for the 8-bit trophy
+  const retroTrophyGrid = [
+    [0,0,1,1,1,1,1,1,1,1,1,1,0,0], 
+    [1,0,1,5,2,2,2,2,2,2,5,1,0,1], 
+    [1,0,1,2,3,2,2,2,2,2,2,1,0,1], 
+    [1,1,1,2,3,2,2,2,2,4,2,1,1,1], 
+    [0,0,1,2,3,2,2,2,2,4,4,1,0,0], 
+    [0,0,0,1,2,2,2,2,4,4,1,0,0,0], 
+    [0,0,0,0,1,1,1,1,1,1,0,0,0,0], 
+    [0,0,0,0,0,1,2,4,1,0,0,0,0,0], 
+    [0,0,0,0,0,0,1,1,0,0,0,0,0,0], 
+    [0,0,0,0,0,1,2,4,1,0,0,0,0,0], 
+    [0,0,0,0,1,2,2,4,4,1,0,0,0,0], 
+    [0,0,0,1,1,1,1,1,1,1,1,0,0,0], 
+    [0,0,1,1,1,1,1,1,1,1,1,1,0,0], 
+  ];
+
+  const renderTrophySVG = (size = 112) => {
+    return (
+      <svg 
+        style={{ width: `${size}px`, height: `${size * (13/14)}px` }} 
+        viewBox="0 0 14 13" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg" 
+        className="w-full h-full drop-shadow-[0_0_15px_rgba(255,215,0,0.4)]"
+      >
+        {retroTrophyGrid.map((row, rIdx) => 
+          row.map((cell, cIdx) => {
+            if (cell === 0) return null;
+            let fill = "#000000";
+            if (cell === 1) fill = "#B45309"; // Dark gold outline
+            if (cell === 2) fill = "#F59E0B"; // Base gold
+            if (cell === 3) fill = "#FEF3C7"; // Highlight
+            if (cell === 4) fill = "#D97706"; // Shadow
+            if (cell === 5) fill = "#FFFFFF"; // Sparkle
+            return <rect key={`t-${rIdx}-${cIdx}`} x={cIdx} y={rIdx} width="1.05" height="1.05" fill={fill} />;
+          })
+        )}
+      </svg>
+    );
+  };
+
   // Motion variants for letter-by-letter staggering reveal skewed at exactly 18-degrees!
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -156,10 +198,9 @@ export const LandingPage = ({ onNavigateToArena }) => {
           [S/N: 4275EV17EN // MODEL: COMBAT_UNIT]
         </div>
 
-        {/* 18-degree Animated Clashing Cursors (Scaled Down and Symmetrical) */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
-          
-          <div style={{ display: 'flex', gap: '4px', height: '36px', width: '52px', marginBottom: '16px', position: 'relative' }}>
+        {/* Trophy and Flanking Cursors in Hero Section */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '36px', position: 'relative' }}>
+          <div style={{ display: 'flex', gap: '20px', alignItems: 'center', height: '110px', position: 'relative', marginBottom: '16px' }}>
             {/* Left Cyan Cursor Enters Symmetrically and floats */}
             <motion.div 
               initial={{ x: -100, opacity: 0 }}
@@ -173,9 +214,19 @@ export const LandingPage = ({ onNavigateToArena }) => {
                 opacity: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
                 y: { repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.8 }
               }}
-              style={{ transform: 'rotate(18deg)', transformOrigin: 'right top', filter: 'drop-shadow(0 0 6px var(--accent-cyan))', width: '24px', height: '34px' }}
+              style={{ transform: 'rotate(18deg)', transformOrigin: 'right top', filter: 'drop-shadow(0 0 8px var(--accent-cyan))', width: '36px', height: '51px' }}
             >
               {renderCursor('cyan', true)}
+            </motion.div>
+
+            {/* Trophy in the Center */}
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1.1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.2 }}
+              style={{ width: '112px', height: '104px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              {renderTrophySVG(112)}
             </motion.div>
 
             {/* Right Crimson Cursor Enters Symmetrically and floats */}
@@ -191,21 +242,11 @@ export const LandingPage = ({ onNavigateToArena }) => {
                 opacity: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
                 y: { repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.8 }
               }}
-              style={{ transform: 'rotate(-18deg)', transformOrigin: 'left top', filter: 'drop-shadow(0 0 6px var(--accent-crimson))', width: '24px', height: '34px' }}
+              style={{ transform: 'rotate(-18deg)', transformOrigin: 'left top', filter: 'drop-shadow(0 0 8px var(--accent-crimson))', width: '36px', height: '51px' }}
             >
               {renderCursor('crimson', false)}
             </motion.div>
           </div>
-          
-          <motion.h2 
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 0.8, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="font-display" 
-            style={{ fontSize: '10px', letterSpacing: '0.45em', fontWeight: 'bold', color: 'var(--accent-yellow)', textTransform: 'uppercase', textShadow: '0 0 8px rgba(255,215,0,0.25)' }}
-          >
-            來未 // FUTURE DIGITAL DUELS
-          </motion.h2>
         </div>
 
         {/* OFFICIAL STENCILED OPTION WORDMARK WITH EXPANSION ANIMATION */}
@@ -215,7 +256,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
             alignItems: 'center', 
             justifyContent: 'center', 
             fontFamily: "'Space Grotesk', sans-serif", 
-            fontSize: 'clamp(32px, 6.5vw, 68px)', 
+            fontSize: 'clamp(44px, 8vw, 84px)', 
             fontWeight: 900, 
             color: '#fff', 
             userSelect: 'none', 
@@ -360,22 +401,40 @@ export const LandingPage = ({ onNavigateToArena }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.45 }}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '28px' }}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '28px' }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: '4px', height: '4px', backgroundColor: 'var(--accent-cyan)' }}></span>
-            <span style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '13px',
-              fontWeight: '900',
-              letterSpacing: '0.4em',
-              color: 'var(--text-secondary)',
-              textTransform: 'uppercase',
-              fontStyle: 'italic'
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '16px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '18px',
+            fontWeight: '900',
+            letterSpacing: '0.25em',
+            textTransform: 'uppercase',
+            fontStyle: 'italic',
+            marginTop: '8px'
+          }}>
+            <span style={{ 
+              color: 'var(--accent-cyan)', 
+              textShadow: '0 0 10px rgba(0, 242, 254, 0.5)'
             }}>
-              code.clash.conquer.
+              CODE
             </span>
-            <span style={{ width: '4px', height: '4px', backgroundColor: 'var(--accent-crimson)' }}></span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>//</span>
+            <span style={{ 
+              color: 'var(--accent-crimson)', 
+              textShadow: '0 0 10px rgba(244, 63, 94, 0.5)'
+            }}>
+              CLASH
+            </span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>//</span>
+            <span style={{ 
+              color: 'var(--accent-yellow)', 
+              textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
+            }}>
+              CONQUER
+            </span>
           </div>
           
           <span style={{
@@ -533,7 +592,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
                 <span style={{ fontSize: '9px', color: 'var(--accent-cyan)', letterSpacing: '0.3em', fontWeight: 'bold' }}>TACTICAL PROCTORING</span>
               </div>
               
-              <h2 className="font-display font-bold glow-cyan" style={{ fontSize: '32px', color: '#fff', textTransform: 'uppercase', marginBottom: '24px', letterSpacing: '0.05em' }}>
+              <h2 className="font-display font-bold glow-cyan" style={{ fontSize: 'clamp(32px, 5vw, 44px)', color: '#fff', textTransform: 'uppercase', marginBottom: '24px', letterSpacing: '0.05em' }}>
                 SECURITY MOAT
               </h2>
 
@@ -617,7 +676,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <span style={{ fontSize: '9px', color: 'var(--accent-yellow)', letterSpacing: '0.3em', fontWeight: 'bold' }}>HUD TELEMETRY PREVIEW</span>
-            <h2 className="font-display font-bold glow-yellow" style={{ fontSize: '32px', color: '#fff', textTransform: 'uppercase', marginTop: '6px' }}>
+            <h2 className="font-display font-bold glow-yellow" style={{ fontSize: 'clamp(32px, 5vw, 44px)', color: '#fff', textTransform: 'uppercase', marginTop: '6px' }}>
               BATTLEGROUND HUD
             </h2>
             <div className="hazard-stripes-sm" style={{ width: '80px', height: '4px', margin: '12px auto 0 auto' }}></div>
@@ -708,7 +767,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <span style={{ fontSize: '9px', color: 'var(--accent-crimson)', letterSpacing: '0.3em', fontWeight: 'bold' }}>PLATFORM REVOLUTION</span>
-            <h2 className="font-display font-bold glow-crimson" style={{ fontSize: '32px', color: '#fff', textTransform: 'uppercase', marginTop: '6px' }}>
+            <h2 className="font-display font-bold glow-crimson" style={{ fontSize: 'clamp(32px, 5vw, 44px)', color: '#fff', textTransform: 'uppercase', marginTop: '6px' }}>
               THE EVOLUTION
             </h2>
             <div style={{ width: '80px', height: '2px', backgroundColor: 'var(--accent-crimson)', margin: '12px auto 0 auto' }}></div>
@@ -802,7 +861,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <span style={{ fontSize: '9px', color: 'var(--accent-yellow)', letterSpacing: '0.3em', fontWeight: 'bold' }}>LIVE STAGING AREA</span>
-            <h2 className="font-display font-bold glow-yellow" style={{ fontSize: '32px', color: '#fff', textTransform: 'uppercase', marginTop: '6px' }}>
+            <h2 className="font-display font-bold glow-yellow" style={{ fontSize: 'clamp(32px, 5vw, 44px)', color: '#fff', textTransform: 'uppercase', marginTop: '6px' }}>
               TOURNAMENT #01
             </h2>
             <div style={{ width: '80px', height: '2px', backgroundColor: 'var(--accent-yellow)', margin: '12px auto 0 auto' }}></div>
@@ -847,10 +906,10 @@ export const LandingPage = ({ onNavigateToArena }) => {
           >
             <div style={{ flex: '1', minWidth: '280px' }}>
               <span className="glow-yellow" style={{ fontSize: '9px', color: 'var(--accent-yellow)', fontWeight: 'bold', letterSpacing: '0.25em' }}>REGISTRATION OPEN</span>
-              <h3 className="font-display font-bold" style={{ fontSize: '20px', color: '#fff', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <h3 className="font-display font-bold glow-yellow" style={{ fontSize: 'clamp(20px, 3.5vw, 28px)', color: '#fff', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 ₹50,000 COMBAT MATRIX
               </h3>
-              <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '6px', lineHeight: 1.5, fontFamily: 'var(--font-mono)' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '10px', lineHeight: 1.6, fontFamily: 'var(--font-mono)' }}>
                 64 slots • Double elimination • ₹149 entry buy-in. Tokyo/Seoul/Mumbai staging. Prove your rating.
               </p>
             </div>

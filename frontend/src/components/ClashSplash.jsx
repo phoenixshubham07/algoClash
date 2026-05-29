@@ -248,6 +248,44 @@ export const ClashSplash = ({ onFinish }) => {
     };
   }, []);
 
+  // Automatically trigger enter (fade out) when user scrolls down in hero_morph phase
+  useEffect(() => {
+    if (phase !== 'hero_morph') return;
+
+    let triggered = false;
+    const handleScroll = () => {
+      if (triggered) return;
+      if (window.scrollY > 8) {
+        triggered = true;
+        handleEnter();
+      }
+    };
+
+    const handleWheel = (e) => {
+      if (triggered) return;
+      if (e.deltaY > 8) {
+        triggered = true;
+        handleEnter();
+      }
+    };
+
+    const handleTouch = (e) => {
+      if (triggered) return;
+      triggered = true;
+      handleEnter();
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    window.addEventListener('touchmove', handleTouch, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('touchmove', handleTouch);
+    };
+  }, [phase]);
+
   // Canvas loop
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -432,10 +470,10 @@ export const ClashSplash = ({ onFinish }) => {
     tl.to(blackOverlayRef.current, { opacity: 0, duration: 0.5 });
     tl.to(conquerTextRef.current, { opacity: 0, scale: 0.8, duration: 0.4 }, "<");
     
-    // Hide the trophy in the hero section and place clashing cursors close together
-    tl.to(trophyRef.current, { opacity: 0, scale: 0, duration: 0.4, ease: "power3.out" }, "<");
-    tl.to(leftCursorRef.current, { x: "-2px", y: "-92px", scale: 0.667, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
-    tl.to(rightCursorRef.current, { x: "2px", y: "-92px", scale: 0.667, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
+    // Scale the trophy to 1.1, place it above the logo, and flank it with cursors
+    tl.to(trophyRef.current, { x: "0px", y: "-120px", scale: 1.1, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
+    tl.to(leftCursorRef.current, { x: "-64px", y: "-120px", scale: 1.0, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
+    tl.to(rightCursorRef.current, { x: "64px", y: "-120px", scale: 1.0, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
   };
 
   const handleEnter = () => {
@@ -891,7 +929,7 @@ export const ClashSplash = ({ onFinish }) => {
               alignItems: 'center', 
               justifyContent: 'center', 
               fontFamily: "'Space Grotesk', sans-serif", 
-              fontSize: 'clamp(32px, 6.5vw, 68px)', 
+              fontSize: 'clamp(44px, 8vw, 84px)', 
               fontWeight: 900, 
               color: '#fff', 
               userSelect: 'none', 
@@ -1004,23 +1042,41 @@ export const ClashSplash = ({ onFinish }) => {
               display: 'flex', 
               flexDirection: 'column', 
               alignItems: 'center', 
-              gap: '12px'
+              gap: '16px'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ width: '4px', height: '4px', backgroundColor: 'var(--accent-cyan)' }}></span>
-              <span style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '13px',
-                fontWeight: '900',
-                letterSpacing: '0.4em',
-                color: 'var(--text-secondary)',
-                textTransform: 'uppercase',
-                fontStyle: 'italic'
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '16px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '18px',
+              fontWeight: '900',
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase',
+              fontStyle: 'italic',
+              marginTop: '8px'
+            }}>
+              <span style={{ 
+                color: 'var(--accent-cyan)', 
+                textShadow: '0 0 10px rgba(0, 242, 254, 0.5)'
               }}>
-                code.clash.conquer.
+                CODE
               </span>
-              <span style={{ width: '4px', height: '4px', backgroundColor: 'var(--accent-crimson)' }}></span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>//</span>
+              <span style={{ 
+                color: 'var(--accent-crimson)', 
+                textShadow: '0 0 10px rgba(244, 63, 94, 0.5)'
+              }}>
+                CLASH
+              </span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>//</span>
+              <span style={{ 
+                color: 'var(--accent-yellow)', 
+                textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
+              }}>
+                CONQUER
+              </span>
             </div>
             
             <span style={{
