@@ -4,6 +4,7 @@ import { LandingPage } from './components/LandingPage';
 import { ArenaPage } from './components/ArenaPage';
 import { WordmarkTestPage } from './components/WordmarkTestPage';
 import { LoginPage } from './components/LoginPage';
+import { DashboardPage } from './components/DashboardPage';
 import { BrandIdentityPage } from './components/BrandIdentityPage';
 import { CyberCursor } from './components/CyberCursor';
 import { InteractiveBackgroundPage } from './components/InteractiveBackgroundPage';
@@ -34,6 +35,16 @@ function App() {
       <>
         <CyberCursor />
         <LoginPage />
+      </>
+    );
+  }
+
+  // Check for path-based routing for dashboard page
+  if (window.location.pathname === '/dashboard') {
+    return (
+      <>
+        <CyberCursor />
+        <DashboardPage />
       </>
     );
   }

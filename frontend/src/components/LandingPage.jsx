@@ -303,7 +303,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
 
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <a href="/login" style={{ textDecoration: 'none' }}>
-            <CyberButton variant="ghost" size="sm">
+            <CyberButton variant="warning" size="sm">
               LOG IN
             </CyberButton>
           </a>
@@ -609,9 +609,9 @@ export const LandingPage = ({ onNavigateToArena }) => {
           <CyberButton variant="primary" size="md" onClick={() => onNavigateToArena(null)}>
             ENTER THE BATTLEFIELD
           </CyberButton>
-          <a href="#tech-moat" style={{ textDecoration: 'none' }}>
-            <CyberButton variant="ghost" size="md">
-              VIEW TELEMETRY SPECS
+          <a href="/login" style={{ textDecoration: 'none' }}>
+            <CyberButton variant="warning" size="md">
+              JOIN THE CLASH NOW
             </CyberButton>
           </a>
         </motion.div>

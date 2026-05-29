@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
 import { 
   Trophy, 
   Zap, 
@@ -24,6 +25,8 @@ import {
   ChevronDown
 } from 'lucide-react';
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+
 // Predefined Pool of Rivals for the Matchmaker Roulette
 const RIVAL_POOL = [
   { username: 'garvit_99', elo: 1204, country: 'IN', flag: '🇮🇳', avatarColor: '#EF4444' },
@@ -43,13 +46,70 @@ const FAKE_NAMES = [
   'red_black_tree', 'hash_slinger', 'regex_terminator', 'matrix_multi', 'mutex_lock'
 ];
 
+const DEFAULT_TEMPLATES = {
+  cpp: `#include <iostream>
+using namespace std;
+
+int main() {
+    // Solve: Find maximum product of 3 elements in array
+    int n;
+    cin >> n;
+    long long a[n];
+    for(int i = 0; i < n; ++i) cin >> a[i];
+    
+    // TODO: Write optimal O(n) solution here
+    
+    return 0;
+}`,
+  java: `import java.util.*;
+import java.io.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(br.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        
+        long[] a = new long[n];
+        st = new StringTokenizer(br.readLine());
+        for (int i = 0; i < n; i++) {
+            a[i] = Long.parseLong(st.nextToken());
+        }
+        
+        // TODO: Write optimal O(n) solution here
+    }
+}`,
+  python: `import sys
+
+def solve():
+    # Read all input from standard input
+    input_data = sys.stdin.read().split()
+    if not input_data:
+        return
+    n = int(input_data[0])
+    a = [int(x) for x in input_data[1:n+1]]
+    
+    # TODO: Write optimal O(n) solution here
+    
+if __name__ == '__main__':
+    solve()
+`
+};
+
 export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
   // Navigation / Phase States
   // 'lobby' | 'queuing' | 'roulette' | 'vs_reveal' | 'arena' | 'post_match'
   const [appState, setAppState] = useState('lobby');
+  const [matchId, setMatchId] = useState(null);
+  const [problem, setProblem] = useState(null);
+  const [activeTab, setActiveTab] = useState('code'); // 'description' | 'code'
   
+  // Stable random session user id to avoid collisions
+  const [userId] = useState(() => 'user_' + Math.random().toString(36).substr(2, 9));
+
   // Player Stats
   const [myStats, setMyStats] = useState({
+    id: userId,
     username: 'shubham_b',
     elo: 1218,
     wins: 24,
@@ -67,21 +127,19 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
   // Match State / Parameters
   const [submissionsLeft, setSubmissionsLeft] = useState(2);
   const [opponentSubmissionsLeft, setOpponentSubmissionsLeft] = useState(2);
-  const [myProgress, setMyProgress] = useState(0); // 0 to 12 cases
-  const [opponentProgress, setOpponentProgress] = useState(0); // 0 to 12 cases
-  const [totalCases] = useState(12);
+  const [myProgress, setMyProgress] = useState(0); 
+  const [opponentProgress, setOpponentProgress] = useState(0); 
+  const [totalCases, setTotalCases] = useState(12);
   const [matchTimeRemaining, setMatchTimeRemaining] = useState(1800); // 30 minutes in seconds
   const [opponentStatus, setOpponentStatus] = useState('active'); // 'active' | 'idle' | 'disconnected'
-  const [opponentCursorLine, setOpponentCursorLine] = useState(12);
-  const [dangerPulse, setDangerPulse] = useState(false); // Edges flash red when opponent hits >= 80% (10/12 cases)
+  const [opponentCursorLine, setOpponentCursorLine] = useState(1);
+  const [dangerPulse, setDangerPulse] = useState(false); // Edges flash red when opponent hits >= 80%
   const [fullscreenViolations, setFullscreenViolations] = useState(0);
   const [showWarning, setShowWarning] = useState(null);
   
   // Interactive Code Playground State
   const [activeLanguage, setActiveLanguage] = useState('cpp');
-  const [userCode, setUserCode] = useState(
-    `#include <iostream>\nusing namespace std;\n\nint main() {\n    // Solve: Find maximum product of 3 elements in array\n    int n;\n    cin >> n;\n    long long a[n];\n    for(int i = 0; i < n; ++i) cin >> a[i];\n    \n    // TODO: Write optimal O(n) solution here\n    \n    return 0;\n}`
-  );
+  const [userCode, setUserCode] = useState(DEFAULT_TEMPLATES.cpp);
   const [consoleLogs, setConsoleLogs] = useState([
     { type: 'system', text: 'SANDBOX INITIALIZED [CONTAINER_A_349]' },
     { type: 'system', text: 'READY FOR COMPILATION' }
@@ -92,11 +150,12 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
   const [matchResult, setMatchResult] = useState(null); // 'victory' | 'defeat'
   const [showAnalysis, setShowAnalysis] = useState(true);
 
-  // Timers & Intervals Ref
+  // Timers & socket ref
   const timerRef = useRef(null);
-  const opponentSimRef = useRef(null);
+  const socketRef = useRef(null);
+  const oppIdleTimerRef = useRef(null);
 
-  // Sound generator placeholder (using Web Audio API for techy synth click noises)
+  // Audio synths helper
   const playBeep = (freq, duration, type = 'sine') => {
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -110,52 +169,200 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
       gainNode.connect(audioCtx.destination);
       oscillator.start();
       oscillator.stop(audioCtx.currentTime + duration);
-    } catch (e) {
-      // Ignored if browser blocks audio autoplay
-    }
+    } catch (e) {}
   };
 
-  // Trigger from initialOpponent if loaded directly
-  useEffect(() => {
-    if (initialOpponent) {
-      setOpponent(initialOpponent);
-      startArenaMatch(initialOpponent);
-    }
-    return () => {
-      clearAllSimulations();
-    };
-  }, [initialOpponent]);
+  const addConsoleLog = (type, text) => {
+    setConsoleLogs(prev => [...prev, { type, text }]);
+  };
 
-  // Start Matchmaking Queue
+  // Sync editor template code when changing language (if not edited by user yet)
+  useEffect(() => {
+    setUserCode(DEFAULT_TEMPLATES[activeLanguage]);
+  }, [activeLanguage]);
+
+  // Clean up socket and timers on unmount
+  useEffect(() => {
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (oppIdleTimerRef.current) clearTimeout(oppIdleTimerRef.current);
+    };
+  }, []);
+
+  // Countdown timer for vs reveal screen
+  useEffect(() => {
+    if (appState === 'vs_reveal') {
+      if (vsCountdown > 0) {
+        const t = setTimeout(() => {
+          setVsCountdown(prev => {
+            if (prev <= 1) {
+              if (socketRef.current && matchId) {
+                socketRef.current.emit('match:ready', { match_id: matchId, user_id: myStats.id });
+              }
+              return 0;
+            }
+            playBeep(523.25 + (3 - prev) * 100, 0.15, 'sine');
+            return prev - 1;
+          });
+        }, 1000);
+        return () => clearTimeout(t);
+      }
+    }
+  }, [appState, vsCountdown, matchId, myStats.id]);
+
+  // Establish connection and join matchmaking queue
   const startMatchmaking = () => {
     setAppState('queuing');
     playBeep(440, 0.1, 'square');
-    
-    // Simulate Bangalore Server logs & Network checks
-    setTimeout(() => addConsoleLog('queuing-log', 'ESTABLISHING SECURE WEBSOCKET TUNNEL...'), 600);
-    setTimeout(() => addConsoleLog('queuing-log', 'CONNECTING TO DIGITALOCEAN BLR-2 DROPLET [128.199.15.xx]'), 1200);
-    setTimeout(() => addConsoleLog('queuing-log', 'VERIFYING FULLSCREEN INTEGRITY CHECKS... OK'), 1800);
-    setTimeout(() => {
-      // Pick a random rival from our seed list
-      const chosen = RIVAL_POOL[Math.floor(Math.random() * RIVAL_POOL.length)];
-      setOpponent(chosen);
-      triggerRoulette(chosen);
-    }, 2800);
+    addConsoleLog('system', 'ESTABLISHING SECURE WEBSOCKET TUNNEL...');
+
+    if (!socketRef.current) {
+      const socket = io(BACKEND_URL);
+      socketRef.current = socket;
+
+      socket.on('connect', () => {
+        addConsoleLog('system', 'CONNECTED TO DIGITALOCEAN BLR-2 DROPLET');
+        socket.emit('match:find', myStats);
+      });
+
+      socket.on('match:found', ({ opponent: oppData, match_id }) => {
+        setOpponent(oppData);
+        setMatchId(match_id);
+        triggerRoulette(oppData, match_id);
+      });
+
+      socket.on('match:start', ({ problem: probData, deadline, submissions_cap }) => {
+        setAppState('arena');
+        setProblem(probData);
+        setTotalCases(probData.hidden_cases.length);
+        setSubmissionsLeft(submissions_cap);
+        setOpponentSubmissionsLeft(submissions_cap);
+        setMyProgress(0);
+        setOpponentProgress(0);
+        setDangerPulse(false);
+        setLastVerdict(null);
+        setFullscreenViolations(0);
+        setShowWarning(null);
+        setActiveTab('description'); // Open description tab first to read instructions
+
+        // Start authoritative countdown timer based on deadline timestamp
+        const calculateRemaining = () => {
+          const rem = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+          setMatchTimeRemaining(rem);
+          if (rem <= 0 && timerRef.current) {
+            clearInterval(timerRef.current);
+          }
+        };
+        calculateRemaining();
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = setInterval(calculateRemaining, 1000);
+      });
+
+      socket.on('opponent:typing', () => {
+        setOpponentStatus('active');
+        if (oppIdleTimerRef.current) clearTimeout(oppIdleTimerRef.current);
+        oppIdleTimerRef.current = setTimeout(() => {
+          setOpponentStatus('idle');
+        }, 3000);
+      });
+
+      socket.on('opponent:cursor', ({ line }) => {
+        setOpponentCursorLine(line);
+      });
+
+      socket.on('opponent:status', ({ status }) => {
+        setOpponentStatus(status);
+        if (status === 'disconnected') {
+          addConsoleLog('error', '⚠️ RIVAL DISCONNECTED. GRACE PERIOD ACTIVE [30S]');
+        }
+      });
+
+      socket.on('opponent:submitted', ({ verdict, casesPassed, totalCases, submissionsLeft }) => {
+        setOpponentSubmissionsLeft(submissionsLeft);
+        setOpponentProgress(casesPassed);
+        if (casesPassed / totalCases >= 0.8) {
+          setDangerPulse(true);
+          addConsoleLog('error', `🔥 CRITICAL DANGER: Rival passed ${casesPassed}/${totalCases} test cases! SHIELD DEFENSES FAILING.`);
+        } else {
+          addConsoleLog('warning', `🚨 RIVAL SUBMISSION LOGGED: Passed ${casesPassed}/${totalCases} test cases [${verdict}]`);
+        }
+      });
+
+      socket.on('testrun:compiling', () => {
+        addConsoleLog('system', '⚙️ COMPILING SAMPLE TEST CASES...');
+      });
+
+      socket.on('testrun:result', ({ success, cases }) => {
+        cases.forEach((c, i) => {
+          if (c.verdict === 'AC') {
+            addConsoleLog('success', `✔ Test Case ${i + 1}: PASSED (Time: 4ms)`);
+          } else {
+            addConsoleLog('error', `❌ Test Case ${i + 1}: FAILED [${c.verdict}]`);
+            if (c.stderr) {
+              addConsoleLog('error', `   Details: ${c.stderr.slice(0, 150)}`);
+            }
+          }
+        });
+        if (success) {
+          addConsoleLog('success', '💡 Code compiled successfully. Ready for high-stakes validation.');
+          playBeep(600, 0.2, 'sine');
+        } else {
+          playBeep(150, 0.3, 'sawtooth');
+        }
+      });
+
+      socket.on('submit:compiling', () => {
+        addConsoleLog('system', '🚀 DISPATCHING COMPILED PAYLOAD TO JUDGE SERVER...');
+      });
+
+      socket.on('submit:result', ({ verdict, casesPassed, totalCases, submissionsLeft: remSubmits, detail }) => {
+        setSubmissionsLeft(remSubmits);
+        setMyProgress(casesPassed);
+        setLastVerdict({ verdict, casesPassed, detail });
+
+        if (verdict === 'AC') {
+          playBeep(987.77, 0.5, 'sine');
+          addConsoleLog('success', `🏆 ACCEPTED [AC]! All ${casesPassed}/${totalCases} hidden test cases solved perfectly.`);
+        } else {
+          playBeep(150, 0.5, 'sawtooth');
+          addConsoleLog('error', `❌ WRONG ANSWER [${verdict}]. Passed ${casesPassed}/${totalCases} cases. Attempts left: ${remSubmits}`);
+          if (detail) {
+            addConsoleLog('error', `   Details: ${detail}`);
+          }
+        }
+      });
+
+      socket.on('submit:error', ({ reason }) => {
+        addConsoleLog('error', `⚠️ ERROR: ${reason}`);
+      });
+
+      socket.on('match:end', ({ winner_id, reason }) => {
+        clearAllSimulations();
+        if (winner_id === myStats.id) {
+          setMatchResult('victory');
+          playBeep(880, 0.5, 'sine');
+        } else {
+          setMatchResult('defeat');
+          playBeep(120, 0.8, 'sawtooth');
+        }
+        setAppState('post_match');
+      });
+    } else {
+      socketRef.current.emit('match:find', myStats);
+    }
   };
 
-  // Logging utility for simulation
-  const addConsoleLog = (scope, text) => {
-    // Console log routing handled globally or inside states
-  };
-
-  // Trigger Roulette slot-machine animation
-  const triggerRoulette = (chosenRival) => {
+  // Matchmaker Roulette spinner animation
+  const triggerRoulette = (chosenRival, match_id) => {
     setAppState('roulette');
     playBeep(880, 0.1, 'triangle');
     
-    let speed = 40; // Starts incredibly fast
+    let speed = 40; 
     let elapsed = 0;
-    const totalDuration = 3000; // 3 seconds
+    const totalDuration = 2500; 
     let nameIndex = 0;
 
     const spin = () => {
@@ -164,149 +371,52 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
       nameIndex++;
       elapsed += speed;
       
-      // Exponential deceleration
       speed = Math.min(speed * 1.1, 450);
       playBeep(300 + (nameIndex * 15), 0.05, 'sawtooth');
 
       if (elapsed < totalDuration) {
         setTimeout(spin, speed);
       } else {
-        // Halt on real opponent
         setSpinName(chosenRival.username);
         playBeep(600, 0.4, 'sine');
         setTimeout(() => {
-          triggerVSReveal();
+          setAppState('vs_reveal');
+          setVsCountdown(3);
+          playBeep(523.25, 0.2, 'sine');
         }, 800);
       }
     };
     spin();
   };
 
-  // Trigger VS Reveal Screen
-  const triggerVSReveal = () => {
-    setAppState('vs_reveal');
-    setVsCountdown(3);
-    playBeep(523.25, 0.2, 'sine'); // C5
-    
-    const cdInterval = setInterval(() => {
-      setVsCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(cdInterval);
-          startArenaMatch();
-          return 0;
-        }
-        playBeep(523.25 + (3 - prev) * 100, 0.15, 'sine');
-        return prev - 1;
-      });
-    }, 1000);
+  const handleLeaveArena = () => {
+    if (socketRef.current) {
+      socketRef.current.emit('match:cancel', myStats.id);
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+    clearAllSimulations();
+    onReturnToHome();
   };
 
-  // Start the Live Match Arena
-  const startArenaMatch = (opp = opponent) => {
-    setAppState('arena');
-    setSubmissionsLeft(2);
-    setOpponentSubmissionsLeft(2);
-    setMyProgress(0);
-    setOpponentProgress(0);
-    setMatchTimeRemaining(1800); // 30 mins
-    setDangerPulse(false);
-    setLastVerdict(null);
-    setFullscreenViolations(0);
-    setShowWarning(null);
-    
-    // Attempt real browser fullscreen
-    try {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      }
-    } catch(err) {}
-
-    // Main countdown timer
+  const clearAllSimulations = () => {
     if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setMatchTimeRemaining(prev => {
-        if (prev <= 1) {
-          handleMatchTimeout();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    // Simulated Opponent Typing & Submission logic to feel the adrenaline
-    simulateOpponentActivity(opp);
+    if (oppIdleTimerRef.current) clearTimeout(oppIdleTimerRef.current);
   };
 
-  // Opponent Activity Simulation
-  const simulateOpponentActivity = (opp = opponent) => {
-    let tickCount = 0;
-    if (opponentSimRef.current) clearInterval(opponentSimRef.current);
-    opponentSimRef.current = setInterval(() => {
-      tickCount++;
-      
-      // Simulate opponent moving lines
-      setOpponentCursorLine(prev => {
-        const offset = Math.random() > 0.5 ? 1 : -1;
-        const target = Math.max(2, Math.min(35, prev + offset));
-        return target;
-      });
-
-      // Simulate opponent typing status (active/idle)
-      if (tickCount % 8 === 0) {
-        setOpponentStatus('idle');
-      } else if (tickCount % 12 === 0) {
-        setOpponentStatus('disconnected');
-        setConsoleLogs(prev => [...prev, { type: 'error', text: `⚠️ RIVAL DISCONNECTED. GRACE PERIOD ACTIVE [30S]` }]);
-      } else if (tickCount % 14 === 0) {
-        setOpponentStatus('active');
-        setConsoleLogs(prev => [...prev, { type: 'system', text: `⚡ RIVAL RECONNECTED. SYNCING WORKPLACE` }]);
-      } else {
-        setOpponentStatus('active');
-      }
-
-      // Opponent Submission 1: at Tick 18 (Wrong Answer)
-      if (tickCount === 18) {
-        setOpponentSubmissionsLeft(1);
-        setOpponentProgress(7); // 7/12 passed
-        playBeep(220, 0.3, 'sawtooth');
-        setConsoleLogs(prev => [
-          ...prev, 
-          { type: 'warning', text: `🚨 RIVAL SUBMISSION LOGGED: Passed 7/12 test cases [WA]` }
-        ]);
-      }
-
-      // Opponent Submission 2: at Tick 38 (CRITICAL: 10/12 cases passed - Trigger 80% RED PULSE!)
-      if (tickCount === 38) {
-        setOpponentSubmissionsLeft(0);
-        setOpponentProgress(11); // 11/12 passed
-        setDangerPulse(true); // Red alert screen borders activate!
-        playBeep(110, 0.8, 'sawtooth');
-        setConsoleLogs(prev => [
-          ...prev, 
-          { type: 'error', text: `🔥 CRITICAL DANGER: Rival passed 11/12 test cases! SHIELD DEFENSES FAILING.` }
-        ]);
-      }
-
-      // Match timeout safety if neither gets 12/12
-      if (tickCount === 75) {
-        // Rival times out or gets manual forfeit
-      }
-
-    }, 2000);
-  };
-
-  // Handle Fullscreen Exit (Simulate anti-cheat logs)
+  // Proctoring fullscreen violations checking
   useEffect(() => {
     const handleFullscreenChange = () => {
       if (appState === 'arena' && !document.fullscreenElement) {
         setFullscreenViolations(prev => {
           const next = prev + 1;
           if (next >= 2) {
-            triggerDefeat('DISQUALIFIED: Fullscreen/Tab violations exceeded threshold.');
+            if (socketRef.current) {
+              socketRef.current.emit('match:forfeit');
+            }
             return next;
           } else {
             setShowWarning(`⚠️ WARNING: Fullscreen Exit Detected (${next}/2). Exiting again will trigger immediate disqualification!`);
-            // Attempt to force again
             setTimeout(() => {
               if (appState === 'arena' && !document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(() => {});
@@ -324,135 +434,76 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
     };
   }, [appState]);
 
-  // Handle user's local code edits
   const handleCodeChange = (e) => {
     setUserCode(e.target.value);
-    // Mimic cursor status or typing trigger
+    if (socketRef.current) {
+      socketRef.current.emit('me:typing');
+    }
     if (Math.random() > 0.8) {
       playBeep(600, 0.02, 'sine');
     }
   };
 
-  // Simulate "TEST RUN" (Runs against sample cases, unlimited, does not count as submission)
   const runTestCases = () => {
-    setConsoleLogs(prev => [...prev, { type: 'system', text: `⚙️ COMPILING SAMPLE TEST CASES (${activeLanguage})...` }]);
-    playBeep(400, 0.1, 'sine');
-    
-    setTimeout(() => {
-      setConsoleLogs(prev => [
-        ...prev,
-        { type: 'success', text: `✔ Test Case 1: PASSED (Input: "5\\n1 2 3 4 5", Output: "120", Time: 4ms)` },
-        { type: 'success', text: `✔ Test Case 2: PASSED (Input: "3\\n-10 -10 5", Output: "500", Time: 2ms)` },
-        { type: 'system', text: `💡 Code compiled successfully. Ready for high-stakes validation.` }
-      ]);
-      playBeep(600, 0.2, 'sine');
-    }, 1200);
-  };
-
-  // Simulate high stakes SUBMISSION (Counts against 2-cap)
-  const submitSolution = (forceVerdict = null) => {
-    if (submissionsLeft <= 0) return;
-    
-    const curSubmitsLeft = submissionsLeft - 1;
-    setSubmissionsLeft(curSubmitsLeft);
-    
-    setConsoleLogs(prev => [...prev, { type: 'system', text: `🚀 DISPATCHING COMPILED PAYLOAD TO JUDGE SERVER...` }]);
-    playBeep(330, 0.15, 'sawtooth');
-    
-    setTimeout(() => {
-      // Generate result
-      let casesPassed = Math.floor(Math.random() * 5) + 6; // random 6 to 10
-      let verdict = 'WA';
-      let detail = 'Output mismatch on hidden case #8.';
-
-      if (forceVerdict === 'AC' || curSubmitsLeft === 0) {
-        // Guaranteed win simulator or forced
-        casesPassed = 12;
-        verdict = 'AC';
-        detail = 'All hidden cases passed within multipliers.';
-      }
-
-      setMyProgress(casesPassed);
-      setLastVerdict({ verdict, casesPassed, detail });
-
-      if (verdict === 'AC') {
-        playBeep(987.77, 0.5, 'sine'); // B5 (High winning note)
-        setConsoleLogs(prev => [
-          ...prev,
-          { type: 'success', text: `🏆 ACCEPTED [AC]! All 12/12 hidden test cases solved perfectly.` }
-        ]);
-        setTimeout(() => {
-          triggerVictory();
-        }, 1500);
-      } else {
-        playBeep(150, 0.5, 'sawtooth'); // Error buzz
-        setConsoleLogs(prev => [
-          ...prev,
-          { type: 'error', text: `❌ WRONG ANSWER [WA]. Passed ${casesPassed}/12 cases. Attempts left: ${curSubmitsLeft}` }
-        ]);
-        
-        // If out of attempts, wait for opponent to finish or auto-calculate based on tiebreakers
-        if (curSubmitsLeft === 0 && opponentProgress < 12) {
-          // Trigger automated tiebreaker analysis after 5s
-          setTimeout(() => {
-            evaluateTiebreakerAtMatchEnd();
-          }, 4000);
-        }
-      }
-    }, 1500);
-  };
-
-  // Evaluate tiebreaker
-  const evaluateTiebreakerAtMatchEnd = () => {
-    // 1. Highest hidden cases passed wins
-    if (myProgress > opponentProgress) {
-      triggerVictory();
-    } else if (opponentProgress > myProgress) {
-      triggerDefeat('Opponent passed more hidden test cases than your submission.');
-    } else {
-      // 2. Same cases passed: earliest timestamp wins (We simulate that we were faster)
-      triggerVictory('TIEBREAKER: Your submission was registered 1.2s earlier in Microsecond Log.');
+    if (socketRef.current) {
+      socketRef.current.emit('testrun', {
+        problem_id: problem ? problem.id : 'prod-product-of-3',
+        code: userCode,
+        language: activeLanguage
+      });
     }
   };
 
-  // Clean up timers on transition
-  const clearAllSimulations = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (opponentSimRef.current) clearInterval(opponentSimRef.current);
+  const submitSolution = () => {
+    if (submissionsLeft <= 0) return;
+    if (socketRef.current) {
+      socketRef.current.emit('submit', {
+        problem_id: problem ? problem.id : 'prod-product-of-3',
+        code: userCode,
+        language: activeLanguage
+      });
+    }
   };
 
-  // Handle victory flow
-  const triggerVictory = (reason = 'Solved all hidden test cases first.') => {
-    clearAllSimulations();
-    setMatchResult('victory');
-    setAppState('post_match');
-    playBeep(880, 0.5, 'sine');
+  const forfeitDuel = () => {
+    if (window.confirm("Are you sure you want to forfeit? This will count as an immediate defeat.")) {
+      if (socketRef.current) {
+        socketRef.current.emit('match:forfeit');
+      }
+    }
   };
 
-  // Handle defeat flow
-  const triggerDefeat = (reason = 'Opponent resolved the challenge faster.') => {
-    clearAllSimulations();
-    setMatchResult('defeat');
-    setAppState('post_match');
-    playBeep(120, 0.8, 'sawtooth');
-  };
-
-  const handleMatchTimeout = () => {
-    evaluateTiebreakerAtMatchEnd();
-  };
-
-  // Return to Lobby
   const returnToLobby = () => {
     clearAllSimulations();
     setAppState('lobby');
   };
 
-  // Format countdown clock
   const formatTime = (secs) => {
     const mins = Math.floor(secs / 60);
     const remainingSecs = secs % 60;
     return `${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
   };
+
+  const getTextAreaLineNumber = (textarea) => {
+    if (!textarea) return 1;
+    const textToCursor = textarea.value.substr(0, textarea.selectionStart);
+    return textToCursor.split('\n').length;
+  };
+
+  // Throttled Ghost Cursor position line update emitter
+  useEffect(() => {
+    if (appState !== 'arena') return;
+
+    const interval = setInterval(() => {
+      const textarea = document.querySelector('textarea');
+      if (textarea && socketRef.current) {
+        const line = getTextAreaLineNumber(textarea);
+        socketRef.current.emit('me:cursor', { line });
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [appState]);
 
   return (
     <div className="min-h-screen bg-[#0A0B0E] text-slate-100 font-mono relative overflow-hidden flex flex-col justify-between selection:bg-red-500 selection:text-black">
@@ -860,48 +911,19 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
               <div className="absolute inset-0 border-4 border-red-600 rounded-xl pointer-events-none animate-redBorderPulse z-30 shadow-[inset_0_0_40px_rgba(220,38,38,0.7)]"></div>
             )}
 
-            {/* ARENA TOP CONTROL AND SIMULATION HUD */}
-            <div className="bg-[#141720] border-2 border-[#232A3B] p-4 rounded-lg flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            {/* ARENA TOP CONTROL HUD */}
+            <div className="bg-[#141720] border-2 border-[#232A3B] p-4 rounded-lg flex items-center justify-between gap-4">
               
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                <span className="text-xs font-bold text-[#FFE600] uppercase tracking-wider border border-[#FFE600]/30 px-2 py-1 rounded bg-[#1C1F25]">
-                  🚨 DEMO SIMULATOR PANEL
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Live Match Active // SECURE TUNNEL
                 </span>
-                
-                {/* Fast track buttons to test specific features of Blueprint easily */}
-                <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                  <button 
-                    onClick={() => {
-                      setOpponentProgress(11);
-                      setDangerPulse(true);
-                      setConsoleLogs(prev => [...prev, { type: 'error', text: `🚨 SIMULATOR: Forced rival progress to 11/12 (80%+ Threat!)` }]);
-                      playBeep(200, 0.5, 'triangle');
-                    }}
-                    className="px-2.5 py-1 bg-red-950/50 hover:bg-red-900/60 border border-red-700/60 text-red-300 rounded cursor-pointer"
-                  >
-                    Simulate Rival Submit (80%+)
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setOpponentProgress(7);
-                      setConsoleLogs(prev => [...prev, { type: 'warning', text: `🚨 SIMULATOR: Forced rival progress to 7/12 (WA)` }]);
-                    }}
-                    className="px-2.5 py-1 bg-yellow-950/50 hover:bg-yellow-900/60 border border-yellow-700/60 text-yellow-300 rounded cursor-pointer"
-                  >
-                    Simulate Rival Submit (7/12)
-                  </button>
-                  <button 
-                    onClick={() => submitSolution('AC')}
-                    className="px-2.5 py-1 bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-700/60 text-emerald-300 rounded cursor-pointer"
-                  >
-                    Simulate Self Submit (AC Victory!)
-                  </button>
-                </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => triggerDefeat('Forfeited via simulation.')}
+                  onClick={forfeitDuel}
                   className="px-4 py-1.5 border border-red-900/40 bg-red-950/30 text-red-400 text-xs rounded hover:bg-red-950/50 transition font-bold cursor-pointer"
                 >
                   FORFEIT DUEL
@@ -1010,10 +1032,31 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
               {/* CODE WORKPLACE (8 Columns) */}
               <div className="lg:col-span-8 flex flex-col gap-3 bg-[#0E1015] border border-slate-800 rounded-lg p-4 h-[420px] md:h-[500px]">
                 
-                {/* Editor Settings Topbar */}
-                <div className="flex items-center justify-between border-b border-[#232A3B] pb-3 text-xs">
+                {/* Tabs Topbar */}
+                <div className="flex items-center justify-between border-b border-[#232A3B] pb-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setActiveTab('description')}
+                      className={`px-3 py-1.5 font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
+                        activeTab === 'description'
+                          ? 'border-[#FF3B30] text-[#FF3B30] bg-[#FF3B30]/10'
+                          : 'border-transparent text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      📖 Problem
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('code')}
+                      className={`px-3 py-1.5 font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
+                        activeTab === 'code'
+                          ? 'border-[#FF3B30] text-[#FF3B30] bg-[#FF3B30]/10'
+                          : 'border-transparent text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      💻 solution.{activeLanguage}
+                    </button>
+                  </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-extrabold text-[#FF3B30] tracking-wider uppercase">SOURCE: solution.{activeLanguage}</span>
                     <select 
                       value={activeLanguage} 
                       onChange={(e) => setActiveLanguage(e.target.value)}
@@ -1024,38 +1067,56 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
                       <option value="python">Python (3.11)</option>
                     </select>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <Activity size={14} className="text-emerald-500" />
-                    <span>Auto-Save Encrypted</span>
-                  </div>
                 </div>
 
-                {/* Simulated Monaco Editor Area */}
-                <div className="flex-1 font-mono text-xs md:text-sm relative overflow-hidden bg-[#07080B] border border-[#171B24] rounded p-3 text-slate-300 flex">
-                  
-                  {/* Line numbers column */}
-                  <div className="text-slate-600 text-right pr-4 select-none border-r border-[#171B24] space-y-0.5">
-                    {Array.from({ length: 22 }, (_, i) => (
-                      <div key={i}>{i + 1}</div>
-                    ))}
+                {activeTab === 'description' ? (
+                  <div className="flex-1 overflow-y-auto bg-[#07080B] border border-[#171B24] rounded p-4 text-slate-300 leading-relaxed text-xs md:text-sm font-sans space-y-4">
+                    <h3 className="text-lg font-black text-[#FFE600] tracking-wide border-b border-slate-800 pb-2">
+                      {problem ? problem.title : 'Max Product of 3'}
+                    </h3>
+                    <div className="whitespace-pre-wrap font-mono text-xs text-slate-300 mt-2">
+                      {problem ? problem.description : 'Loading problem statement...'}
+                    </div>
+                    {problem && problem.test_cases && (
+                      <div className="mt-4 pt-4 border-t border-slate-800 space-y-3 font-mono text-[11px]">
+                        <h4 className="text-slate-400 font-bold uppercase tracking-wider">Sample Test Cases</h4>
+                        {problem.test_cases.map((tc, i) => (
+                          <div key={i} className="bg-[#10121a] p-3 border border-[#1C2029] rounded">
+                            <div className="text-[#FFE600] font-bold mb-1">Sample Input {i + 1}:</div>
+                            <pre className="text-slate-300 bg-black/40 p-2 rounded mb-2 overflow-x-auto">{tc.input}</pre>
+                            <div className="text-emerald-400 font-bold mb-1">Expected Output {i + 1}:</div>
+                            <pre className="text-slate-300 bg-black/40 p-2 rounded overflow-x-auto">{tc.output}</pre>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  <div className="flex-1 font-mono text-xs md:text-sm relative overflow-hidden bg-[#07080B] border border-[#171B24] rounded p-3 text-slate-300 flex">
+                    {/* Line numbers column */}
+                    <div className="text-slate-600 text-right pr-4 select-none border-r border-[#171B24] space-y-0.5">
+                      {Array.from({ length: 22 }, (_, i) => (
+                        <div key={i}>{i + 1}</div>
+                      ))}
+                    </div>
 
-                  {/* Pseudo Editable Area */}
-                  <textarea 
-                    value={userCode}
-                    onChange={handleCodeChange}
-                    spellCheck="false"
-                    className="flex-1 h-full pl-4 bg-transparent outline-none border-none resize-none overflow-y-auto leading-relaxed focus:ring-0 text-emerald-400 font-mono text-xs md:text-sm"
-                  ></textarea>
+                    {/* Pseudo Editable Area */}
+                    <textarea 
+                      value={userCode}
+                      onChange={handleCodeChange}
+                      spellCheck="false"
+                      className="flex-1 h-full pl-4 bg-transparent outline-none border-none resize-none overflow-y-auto leading-relaxed focus:ring-0 text-emerald-400 font-mono text-xs md:text-sm"
+                    ></textarea>
 
-                  {/* Ghost cursor simulation indicator overlay */}
-                  <div 
-                    className="absolute right-4 px-2 py-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[10px] rounded pointer-events-none transition-all duration-500"
-                    style={{ top: `${opponentCursorLine * 16}px` }}
-                  >
-                    ⚡ {opponent.username} (Cursor: Line {opponentCursorLine})
+                    {/* Ghost cursor simulation indicator overlay */}
+                    <div 
+                      className="absolute right-4 px-2 py-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[10px] rounded pointer-events-none transition-all duration-500"
+                      style={{ top: `${opponentCursorLine * 16}px` }}
+                    >
+                      ⚡ {opponent.username} (Cursor: Line {opponentCursorLine})
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Action Run Submissions Dock Panel */}
                 <div className="flex flex-col sm:flex-row gap-3 mt-2">

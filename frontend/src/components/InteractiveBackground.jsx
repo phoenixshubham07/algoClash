@@ -21,11 +21,19 @@ export const InteractiveBackground = () => {
     let scrollState = 'idle';
     let scrollActivity = 0;
     let isIdle = true;
+    let scrollTimeout;
 
     const triggerScrollActive = (direction) => {
       scrollState = direction;
       scrollActivity = 1.0;
       isIdle = false;
+
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        scrollActivity = 0;
+        scrollState = 'idle';
+        isIdle = true;
+      }, 30); // 30ms for instant fade response
     };
 
     const resize = () => {
@@ -62,23 +70,37 @@ export const InteractiveBackground = () => {
       const diff = currentScrollY - lastScrollY;
       lastScrollY = currentScrollY;
 
-      if (diff > 0) {
-        triggerScrollActive('down');
-      } else if (diff < 0) {
-        triggerScrollActive('up');
+      // Ignore low-velocity inertial drift (< 10px) to prevent lingering chevrons
+      if (Math.abs(diff) > 10) {
+        if (diff > 0) {
+          triggerScrollActive('down');
+        } else if (diff < 0) {
+          triggerScrollActive('up');
+        }
       }
     };
 
     const handleWheel = (e) => {
-      if (e.deltaY > 0) {
-        triggerScrollActive('down');
-      } else if (e.deltaY < 0) {
-        triggerScrollActive('up');
+      // Ignore low-velocity inertial wheel events (< 10px)
+      if (Math.abs(e.deltaY) > 10) {
+        if (e.deltaY > 0) {
+          triggerScrollActive('down');
+        } else if (e.deltaY < 0) {
+          triggerScrollActive('up');
+        }
       }
+    };
+
+    const handleScrollEnd = () => {
+      scrollActivity = 0;
+      scrollState = 'idle';
+      isIdle = true;
+      if (scrollTimeout) clearTimeout(scrollTimeout);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('wheel', handleWheel, { passive: true });
+    window.addEventListener('scrollend', handleScrollEnd, { passive: true });
 
     // Neural Network Node Class
     class NodeParticle {
@@ -344,14 +366,7 @@ export const InteractiveBackground = () => {
         return p.opacity > 0;
       });
 
-      // Decay scroll activity to fade back to idle dim state
-      if (scrollActivity > 0) {
-        scrollActivity -= 0.015;
-        if (scrollActivity <= 0) {
-          scrollState = 'idle';
-          isIdle = true;
-        }
-      }
+
 
       // Ambient glow highlighting around mouse
       if (mouse.x !== -1000 && mouse.y !== -1000) {
@@ -373,6 +388,10 @@ export const InteractiveBackground = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseout', handleMouseOut);
       window.removeEventListener('click', handleMouseClick);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('scrollend', handleScrollEnd);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
