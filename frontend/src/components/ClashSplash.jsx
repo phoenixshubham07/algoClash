@@ -248,43 +248,52 @@ export const ClashSplash = ({ onFinish }) => {
     };
   }, []);
 
-  // Automatically trigger enter (fade out) when user scrolls down in hero_morph phase
+  // Automatically trigger enter (fade out) when user scrolls down, clicks, or wheels (Skip mechanic)
   useEffect(() => {
-    if (phase !== 'hero_morph') return;
-
     let triggered = false;
-    const handleScroll = () => {
-      if (triggered) return;
-      if (window.scrollY > 8) {
-        triggered = true;
-        handleEnter();
-      }
-    };
-
-    const handleWheel = (e) => {
-      if (triggered) return;
-      if (e.deltaY > 8) {
-        triggered = true;
-        handleEnter();
-      }
-    };
-
-    const handleTouch = (e) => {
+    const triggerExit = () => {
       if (triggered) return;
       triggered = true;
+      
+      // Stop timeline if it's still running
+      if (timelineRef.current) {
+        timelineRef.current.kill();
+      }
+      
       handleEnter();
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('wheel', handleWheel, { passive: true });
-    window.addEventListener('touchmove', handleTouch, { passive: true });
+    const handleScroll = () => {
+      if (window.scrollY > 8) triggerExit();
+    };
+
+    const handleWheel = (e) => {
+      if (e.deltaY > 8) triggerExit();
+    };
+
+    const handleClick = () => {
+      triggerExit();
+    };
+
+    // Only allow skipping after first impact (so they don't accidentally skip on first frame click)
+    const setupSkipListeners = () => {
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      window.addEventListener('wheel', handleWheel, { passive: true });
+      window.addEventListener('click', handleClick, { passive: true });
+      window.addEventListener('touchmove', triggerExit, { passive: true });
+    };
+
+    // Setup skip listener after 500ms
+    const timer = setTimeout(setupSkipListeners, 500);
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('touchmove', handleTouch);
+      window.removeEventListener('click', handleClick);
+      window.removeEventListener('touchmove', triggerExit);
     };
-  }, [phase]);
+  }, []);
 
   // Canvas loop
   useEffect(() => {
@@ -349,6 +358,15 @@ export const ClashSplash = ({ onFinish }) => {
     particlesRef.current = sps;
   };
 
+  const handleEnter = () => {
+    gsap.to(containerRef.current, {
+      opacity: 0,
+      duration: 0.8,
+      ease: "power2.inOut",
+      onComplete: onFinish
+    });
+  };
+
   const triggerClash = () => {
     if (timelineRef.current) {
       timelineRef.current.kill();
@@ -375,9 +393,7 @@ export const ClashSplash = ({ onFinish }) => {
 
     const tl = gsap.timeline({
       delay: 0.6,
-      onComplete: () => {
-        setPhase('hero_morph');
-      }
+      onComplete: handleEnter
     });
 
     timelineRef.current = tl;
@@ -466,6 +482,10 @@ export const ClashSplash = ({ onFinish }) => {
     tl.to({}, { duration: 1.2 });
 
     // --- 7. HERO MORPH ---
+    tl.call(() => {
+      setPhase('hero_morph');
+    });
+
     // Fade out black overlay and CONQUER text
     tl.to(blackOverlayRef.current, { opacity: 0, duration: 0.5 });
     tl.to(conquerTextRef.current, { opacity: 0, scale: 0.8, duration: 0.4 }, "<");
@@ -474,20 +494,12 @@ export const ClashSplash = ({ onFinish }) => {
     tl.to(trophyRef.current, { x: "0px", y: "-120px", scale: 1.1, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
     tl.to(leftCursorRef.current, { x: "-64px", y: "-120px", scale: 1.0, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
     tl.to(rightCursorRef.current, { x: "64px", y: "-120px", scale: 1.0, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
+
+    // Let the finished state settle for 1.0s before auto-entering
+    tl.to({}, { duration: 1.0 });
   };
 
-  const handleEnter = () => {
-    gsap.to(containerRef.current, {
-      opacity: 0,
-      duration: 0.5,
-      ease: "power2.inOut",
-      onComplete: onFinish
-    });
-  };
 
-  const handleReplay = () => {
-    triggerClash();
-  };
 
   const renderTrophySVG = (size = 112) => {
     return (
@@ -1091,26 +1103,6 @@ export const ClashSplash = ({ onFinish }) => {
             </span>
             
             <div style={{ height: '2px', width: '80px', background: 'linear-gradient(90deg, transparent, var(--accent-cyan), transparent)', marginTop: '8px' }}></div>
-          </motion.div>
-        </div>
-
-        {/* Action Buttons (Initially hidden, fade in below tagline) */}
-        <div style={{ position: 'absolute', left: '50%', top: 'calc(50% + 154px)', transform: 'translateX(-50%)', zIndex: 10 }}>
-          <motion.div 
-            initial={{ opacity: 0, y: 16 }}
-            animate={showTrophy ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
-            transition={{ duration: 0.5, delay: 0.55 }}
-            style={{ 
-              display: 'flex', 
-              gap: '16px'
-            }}
-          >
-            <CyberButton variant="primary" size="lg" onClick={handleEnter}>
-              ENTER THE BATTLEFIELD
-            </CyberButton>
-            <CyberButton variant="warning" size="lg" onClick={handleReplay}>
-              REPLAY INTRO
-            </CyberButton>
           </motion.div>
         </div>
 
