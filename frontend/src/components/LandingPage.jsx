@@ -155,10 +155,10 @@ export const LandingPage = ({ onNavigateToArena }) => {
         </div>
 
         <div style={{ display: 'flex', gap: '32px', fontSize: '10px', fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>
-          <a href="#logo-fold" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">01 // IDENTITY</a>
-          <a href="#tech-moat" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">02 // ANTI_CHEAT</a>
-          <a href="#ui-preview" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">03 // INGAME_HUD</a>
-          <a href="#combat-contrast" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">04 // COMBAT</a>
+          <a href="#logo-fold" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">IDENTITY</a>
+          <a href="#tech-moat" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">ANTI-CHEAT</a>
+          <a href="#ui-preview" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">IN-GAME HUD</a>
+          <a href="#combat-contrast" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">COMBAT</a>
         </div>
 
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -190,13 +190,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           margin: '0 auto'
         }}
       >
-        {/* Decorative Grid Coordinates Decals */}
-        <div style={{ position: 'absolute', top: '40px', left: '20px', fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-          [SEC: PRIVATE_SANDBOX // MUM_NODE_03]
-        </div>
-        <div style={{ position: 'absolute', top: '40px', right: '20px', fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-          [S/N: 4275EV17EN // MODEL: COMBAT_UNIT]
-        </div>
+
 
         {/* Trophy and Flanking Cursors in Hero Section */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '36px', position: 'relative' }}>
@@ -439,13 +433,14 @@ export const LandingPage = ({ onNavigateToArena }) => {
           
           <span style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: '9px',
-            letterSpacing: '0.25em',
-            color: 'var(--text-muted)',
+            fontSize: '11px',
+            letterSpacing: '0.15em',
+            color: 'var(--text-secondary)',
+            fontWeight: '600',
             textTransform: 'uppercase',
             marginTop: '4px'
           }}>
-            [ LOGS // CODING IS NOT AN EXAM. IT'S A 1V1 DUEL ]
+            [ CODING IS NOT AN EXAM. IT'S A 1V1 DUEL ]
           </span>
           
           <div style={{ height: '2px', width: '80px', background: 'linear-gradient(90deg, transparent, var(--accent-cyan), transparent)', marginTop: '8px' }}></div>

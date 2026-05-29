@@ -489,11 +489,11 @@ export const ClashSplash = ({ onFinish }) => {
     // Fade out black overlay and CONQUER text
     tl.to(blackOverlayRef.current, { opacity: 0, duration: 0.5 });
     tl.to(conquerTextRef.current, { opacity: 0, scale: 0.8, duration: 0.4 }, "<");
-    
-    // Scale the trophy to 1.1, place it above the logo, and flank it with cursors
-    tl.to(trophyRef.current, { x: "0px", y: "-120px", scale: 1.1, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
-    tl.to(leftCursorRef.current, { x: "-64px", y: "-120px", scale: 1.0, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
-    tl.to(rightCursorRef.current, { x: "64px", y: "-120px", scale: 1.0, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
+
+    // Scale the trophy to 0.286 (almost same size as cursors) and place it above the two cursors (which clash in center)
+    tl.to(trophyRef.current, { x: "0px", y: "-114px", scale: 0.286, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
+    tl.to(leftCursorRef.current, { x: "-2px", y: "-84px", scale: 0.667, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
+    tl.to(rightCursorRef.current, { x: "2px", y: "-84px", scale: 0.667, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
 
     // Let the finished state settle for 1.0s before auto-entering
     tl.to({}, { duration: 1.0 });
@@ -717,10 +717,10 @@ export const ClashSplash = ({ onFinish }) => {
         </div>
 
         <div style={{ display: 'flex', gap: '32px', fontSize: '10px', fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>
-          <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.15em', cursor: 'default' }}>01 // IDENTITY</span>
-          <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.15em', cursor: 'default' }}>02 // ANTI_CHEAT</span>
-          <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.15em', cursor: 'default' }}>03 // INGAME_HUD</span>
-          <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.15em', cursor: 'default' }}>04 // COMBAT</span>
+          <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.15em', cursor: 'default' }}>IDENTITY</span>
+          <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.15em', cursor: 'default' }}>ANTI-CHEAT</span>
+          <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.15em', cursor: 'default' }}>IN-GAME HUD</span>
+          <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.15em', cursor: 'default' }}>COMBAT</span>
         </div>
 
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -733,23 +733,7 @@ export const ClashSplash = ({ onFinish }) => {
         </div>
       </motion.header>
 
-      {/* Decorative Grid Coordinates Decals (Initially hidden, fade in with hero) */}
-      <motion.div 
-        initial={{ opacity: 0, x: -20 }}
-        animate={showTrophy ? { opacity: 0.5, x: 0 } : { opacity: 0, x: -20 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        style={{ position: 'absolute', top: '100px', left: '20px', fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', zIndex: 10 }}
-      >
-        [SEC: PRIVATE_SANDBOX // MUM_NODE_03]
-      </motion.div>
-      <motion.div 
-        initial={{ opacity: 0, x: 20 }}
-        animate={showTrophy ? { opacity: 0.5, x: 0 } : { opacity: 0, x: 20 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        style={{ position: 'absolute', top: '100px', right: '20px', fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', zIndex: 10 }}
-      >
-        [S/N: 4275EV17EN // MODEL: COMBAT_UNIT]
-      </motion.div>
+
 
       {/* Canvas spark physics */}
       <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 100 }} />
@@ -1093,13 +1077,14 @@ export const ClashSplash = ({ onFinish }) => {
             
             <span style={{
               fontFamily: 'var(--font-mono)',
-              fontSize: '9px',
-              letterSpacing: '0.25em',
-              color: 'var(--text-muted)',
+              fontSize: '11px',
+              letterSpacing: '0.15em',
+              color: 'var(--text-secondary)',
+              fontWeight: '600',
               textTransform: 'uppercase',
               marginTop: '4px'
             }}>
-              [ LOGS // CODING IS NOT AN EXAM. IT'S A 1V1 DUEL ]
+              [ CODING IS NOT AN EXAM. IT'S A 1V1 DUEL ]
             </span>
             
             <div style={{ height: '2px', width: '80px', background: 'linear-gradient(90deg, transparent, var(--accent-cyan), transparent)', marginTop: '8px' }}></div>
