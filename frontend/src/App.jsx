@@ -8,8 +8,8 @@ import { BrandIdentityPage } from './components/BrandIdentityPage';
 import { CyberCursor } from './components/CyberCursor';
 
 function App() {
-  // Splash screen is disabled by default on the root route to prevent blocking, moved to /splash
-  const [showSplash, setShowSplash] = useState(false);
+  // Splash screen is enabled by default on the root route to show on refresh / startup
+  const [showSplash, setShowSplash] = useState(true);
   const [view, setView] = useState('landing'); // landing | arena
   const [initialOpponent, setInitialOpponent] = useState(null);
 
@@ -72,9 +72,7 @@ function App() {
   return (
     <>
       <CyberCursor />
-      {showSplash ? (
-        <ClashSplash onFinish={handleSplashFinish} />
-      ) : view === 'landing' ? (
+      {view === 'landing' ? (
         <LandingPage 
           onNavigateToArena={handleRouteToArena} 
         />
@@ -83,6 +81,9 @@ function App() {
           onReturnToHome={handleRouteToHome} 
           initialOpponent={initialOpponent}
         />
+      )}
+      {showSplash && (
+        <ClashSplash onFinish={handleSplashFinish} />
       )}
     </>
   );

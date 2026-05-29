@@ -20,6 +20,7 @@ export const ClashSplash = ({ onFinish }) => {
   const leftCursorRef = useRef(null);
   const rightCursorRef = useRef(null);
   const timelineRef = useRef(null);
+  const containerRef = useRef(null);
 
   const trophyRef = useRef(null);
   const blackOverlayRef = useRef(null);
@@ -431,10 +432,19 @@ export const ClashSplash = ({ onFinish }) => {
     tl.to(blackOverlayRef.current, { opacity: 0, duration: 0.5 });
     tl.to(conquerTextRef.current, { opacity: 0, scale: 0.8, duration: 0.4 }, "<");
     
-    // Cursors fade back in and flank the trophy while it scales down and rises
-    tl.to(trophyRef.current, { x: "0px", y: "-92px", scale: 1.0, duration: 0.6, ease: "power3.out" }, "<");
-    tl.to(leftCursorRef.current, { x: "-54px", y: "-92px", scale: 1.0, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
-    tl.to(rightCursorRef.current, { x: "54px", y: "-92px", scale: 1.0, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
+    // Hide the trophy in the hero section and place clashing cursors close together
+    tl.to(trophyRef.current, { opacity: 0, scale: 0, duration: 0.4, ease: "power3.out" }, "<");
+    tl.to(leftCursorRef.current, { x: "-2px", y: "-92px", scale: 0.667, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
+    tl.to(rightCursorRef.current, { x: "2px", y: "-92px", scale: 0.667, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
+  };
+
+  const handleEnter = () => {
+    gsap.to(containerRef.current, {
+      opacity: 0,
+      duration: 0.5,
+      ease: "power2.inOut",
+      onComplete: onFinish
+    });
   };
 
   const handleReplay = () => {
@@ -620,7 +630,7 @@ export const ClashSplash = ({ onFinish }) => {
   const showTrophy = phase === 'hero_morph';
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'none', fontFamily: 'var(--font-mono)' }}>
+    <div ref={containerRef} style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'none', fontFamily: 'var(--font-mono)' }}>
       {/* BACKGROUND GRAPHICS & TEXTURES */}
       <div className="grid-bg"></div>
       <div className="scanlines"></div>
@@ -732,7 +742,7 @@ export const ClashSplash = ({ onFinish }) => {
 
         {/* Left Cyan Cursor Container */}
         <div ref={leftCursorRef} style={leftCursorStyle}>
-          <div style={{ animation: phase === 'cursors_approach' ? 'cursor-float-left 4s ease-in-out infinite' : 'none' }}>
+          <div style={{ animation: (phase === 'cursors_approach' || phase === 'hero_morph') ? 'cursor-float-left 4s ease-in-out infinite' : 'none' }}>
             <div 
               className={phase === 'cursors_impact' ? 'grinding-shake' : ''}
               style={{
@@ -750,7 +760,7 @@ export const ClashSplash = ({ onFinish }) => {
 
         {/* Right Crimson Cursor Container */}
         <div ref={rightCursorRef} style={rightCursorStyle}>
-          <div style={{ animation: phase === 'cursors_approach' ? 'cursor-float-right 4s ease-in-out infinite' : 'none' }}>
+          <div style={{ animation: (phase === 'cursors_approach' || phase === 'hero_morph') ? 'cursor-float-right 4s ease-in-out infinite' : 'none' }}>
             <div 
               className={phase === 'cursors_impact' ? 'grinding-shake' : ''}
               style={{
@@ -1039,7 +1049,7 @@ export const ClashSplash = ({ onFinish }) => {
               gap: '16px'
             }}
           >
-            <CyberButton variant="primary" size="lg" onClick={onFinish}>
+            <CyberButton variant="primary" size="lg" onClick={handleEnter}>
               ENTER THE BATTLEFIELD
             </CyberButton>
             <CyberButton variant="warning" size="lg" onClick={handleReplay}>
