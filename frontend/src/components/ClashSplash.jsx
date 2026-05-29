@@ -22,7 +22,6 @@ export const ClashSplash = ({ onFinish }) => {
   const timelineRef = useRef(null);
 
   const particlesRef = useRef([]);
-  const shockwaveRef = useRef(null);
   const flareRef = useRef(null);
   const animationFrameIdRef = useRef(null);
 
@@ -186,38 +185,7 @@ export const ClashSplash = ({ onFinish }) => {
     }
   }
 
-  // Shockwave ring
-  class Shockwave {
-    constructor(x, y) {
-      this.x = x;
-      this.y = y;
-      this.radius = 2;
-      this.alpha = 1;
-      this.maxRadius = 140;
-      this.growth = 5.2;
-    }
-    update() {
-      this.radius += this.growth;
-      this.alpha = Math.max(0, 1 - (this.radius / this.maxRadius));
-    }
-    draw(ctx) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.lineWidth = 5.0;
-      ctx.strokeStyle = '#ffd700'; // Accent yellow glow
-      ctx.globalAlpha = this.alpha * 0.4;
-      ctx.stroke();
 
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.globalAlpha = this.alpha;
-      ctx.stroke();
-      ctx.restore();
-    }
-  }
 
   // Impact flare
   class Flare {
@@ -301,8 +269,8 @@ export const ClashSplash = ({ onFinish }) => {
         const centerY = window.innerHeight / 2;
         const time = Date.now();
         const contactY = centerY + Math.sin(time * 0.05) * 8;
-        // Spawn 1 spark on 12% of frames to keep density very low and eliminate lag
-        if (Math.random() > 0.88) {
+        // Spawn 1 spark on 28% of frames to increase density slightly
+        if (Math.random() > 0.72) {
           particlesRef.current.push(new Spark(centerX, contactY));
         }
       }
@@ -313,12 +281,6 @@ export const ClashSplash = ({ onFinish }) => {
         return p.alpha > 0;
       });
       ctx.globalAlpha = 1.0; // Reset globalAlpha after drawing all particles
-
-      if (shockwaveRef.current) {
-        shockwaveRef.current.update();
-        shockwaveRef.current.draw(ctx);
-        if (shockwaveRef.current.alpha <= 0) shockwaveRef.current = null;
-      }
 
       animationFrameIdRef.current = requestAnimationFrame(loop);
     };
@@ -335,8 +297,8 @@ export const ClashSplash = ({ onFinish }) => {
 
   const triggerSparks = (x, y) => {
     const sps = [];
-    // Reduced initial spark burst to 8 particles
-    for (let i = 0; i < 8; i++) {
+    // Increased initial spark burst to 16 particles
+    for (let i = 0; i < 16; i++) {
       sps.push(new Spark(x, y));
     }
     particlesRef.current = sps;
@@ -350,12 +312,12 @@ export const ClashSplash = ({ onFinish }) => {
     setPhase('initial');
     setGloveForm('pointer');
     particlesRef.current = [];
-    shockwaveRef.current = null;
     flareRef.current = null;
 
     // Reset initial style states using gsap.set to avoid jumps
-    gsap.set(leftGloveRef.current, { xPercent: -100, yPercent: -50, x: "-45vw", y: "0px", scale: 2.2, opacity: 0 });
-    gsap.set(rightGloveRef.current, { xPercent: 0, yPercent: -50, x: "45vw", y: "0px", scale: 2.2, opacity: 0 });
+    // Rotate left glove 70deg and right glove -70deg to make them point at each other
+    gsap.set(leftGloveRef.current, { xPercent: -100, yPercent: -50, x: "-45vw", y: "0px", scale: 2.2, rotation: 70, opacity: 0 });
+    gsap.set(rightGloveRef.current, { xPercent: 0, yPercent: -50, x: "45vw", y: "0px", scale: 2.2, rotation: -70, opacity: 0 });
     gsap.set(leftCursorRef.current, { xPercent: -100, yPercent: -50, x: "-45vw", y: "0px", scale: 2.2, opacity: 0 });
     gsap.set(rightCursorRef.current, { xPercent: 0, yPercent: -50, x: "45vw", y: "0px", scale: 2.2, opacity: 0 });
 
@@ -388,7 +350,6 @@ export const ClashSplash = ({ onFinish }) => {
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
       flareRef.current = new Flare(centerX, centerY);
-      shockwaveRef.current = new Shockwave(centerX, centerY);
       triggerSparks(centerX, centerY);
     });
 
@@ -416,7 +377,6 @@ export const ClashSplash = ({ onFinish }) => {
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
       flareRef.current = new Flare(centerX, centerY);
-      shockwaveRef.current = new Shockwave(centerX, centerY);
       triggerSparks(centerX, centerY);
     });
 
@@ -476,7 +436,13 @@ export const ClashSplash = ({ onFinish }) => {
             if (cell === 0) return null;
             
             let fill = "#FFFFFF"; 
-            if (type === 'cyan') {
+            const isColliding = phase === 'gloves_impact';
+            
+            if (isColliding) {
+              if (cell === 1) fill = "#3e1200"; // Burnt outline
+              if (cell === 2) fill = "#ff3d00"; // Glowing red-orange
+              if (cell === 3) fill = "#ffa726"; // Heated body orange
+            } else if (type === 'cyan') {
               if (cell === 1) fill = "#083344"; // Dark outline
               if (cell === 2) fill = "#00f2fe"; // Cyan accent
               if (cell === 3) fill = "#FFFFFF"; // White body
@@ -496,6 +462,7 @@ export const ClashSplash = ({ onFinish }) => {
                 fill={fill} 
                 stroke={fill}
                 strokeWidth="0.05"
+                style={{ transition: 'fill 0.22s ease, stroke 0.22s ease' }}
               />
             );
           });
@@ -518,7 +485,13 @@ export const ClashSplash = ({ onFinish }) => {
             if (cell === 0) return null;
             
             let fill = "#00f2fe"; 
-            if (type === 'cyan') {
+            const isColliding = phase === 'cursors_impact';
+            
+            if (isColliding) {
+              if (cell === 1) fill = "#3e1200"; // Burnt outline
+              if (cell === 2) fill = "#ff3d00"; // Glowing red-orange
+              if (cell === 3) fill = "#ffa726"; // Heated body orange
+            } else if (type === 'cyan') {
               if (cell === 1) fill = "#083344";
               if (cell === 2) fill = "#00f2fe";
               if (cell === 3) fill = "#FFFFFF";
@@ -538,6 +511,7 @@ export const ClashSplash = ({ onFinish }) => {
                 fill={fill} 
                 stroke={fill}
                 strokeWidth="0.05"
+                style={{ transition: 'fill 0.22s ease, stroke 0.22s ease' }}
               />
             );
           });
@@ -555,7 +529,8 @@ export const ClashSplash = ({ onFinish }) => {
     transform: 'translate(-100%, -50%) translateX(-45vw) scale(2.2)',
     transformOrigin: 'right top',
     opacity: 0,
-    filter: 'drop-shadow(0 0 12px var(--accent-cyan))',
+    filter: phase === 'gloves_impact' ? 'drop-shadow(0 0 22px #ff6d00)' : 'drop-shadow(0 0 12px var(--accent-cyan))',
+    transition: 'filter 0.22s ease',
     pointerEvents: 'none'
   };
 
@@ -567,7 +542,8 @@ export const ClashSplash = ({ onFinish }) => {
     transform: 'translate(0%, -50%) translateX(45vw) scale(2.2)',
     transformOrigin: 'left top',
     opacity: 0,
-    filter: 'drop-shadow(0 0 12px var(--accent-crimson))',
+    filter: phase === 'gloves_impact' ? 'drop-shadow(0 0 22px #ff6d00)' : 'drop-shadow(0 0 12px var(--accent-crimson))',
+    transition: 'filter 0.22s ease',
     pointerEvents: 'none'
   };
 
@@ -579,7 +555,8 @@ export const ClashSplash = ({ onFinish }) => {
     transform: 'translate(-100%, -50%) translateX(-45vw) scale(2.2)',
     transformOrigin: 'right top',
     opacity: 0,
-    filter: 'drop-shadow(0 0 12px var(--accent-cyan))',
+    filter: phase === 'cursors_impact' ? 'drop-shadow(0 0 22px #ff6d00)' : 'drop-shadow(0 0 12px var(--accent-cyan))',
+    transition: 'filter 0.22s ease',
     pointerEvents: 'none'
   };
 
@@ -591,7 +568,8 @@ export const ClashSplash = ({ onFinish }) => {
     transform: 'translate(0%, -50%) translateX(45vw) scale(2.2)',
     transformOrigin: 'left top',
     opacity: 0,
-    filter: 'drop-shadow(0 0 12px var(--accent-crimson))',
+    filter: phase === 'cursors_impact' ? 'drop-shadow(0 0 22px #ff6d00)' : 'drop-shadow(0 0 12px var(--accent-crimson))',
+    transition: 'filter 0.22s ease',
     pointerEvents: 'none'
   };
 
