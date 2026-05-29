@@ -112,16 +112,12 @@ export const InteractiveBackground = () => {
         if (this.y < -10) this.y = height + 10;
         if (this.y > height + 10) this.y = -10;
 
-        // Mouse Gravitational Pull (Web attraction)
+        // Mouse Gravitational Pull (Web attraction) - pull disabled to prevent clumping
         if (mouse.x !== -1000 && mouse.y !== -1000) {
           let dx = mouse.x - this.x;
           let dy = mouse.y - this.y;
           let distance = Math.sqrt(dx * dx + dy * dy);
           if (distance < mouse.radius) {
-            let force = (mouse.radius - distance) / mouse.radius;
-            // Draw nodes closer to mouse to solidify the web
-            this.x += (dx / distance) * force * 0.75;
-            this.y += (dy / distance) * force * 0.75;
             this.opacity = Math.min(0.85, this.opacity + 0.025);
           } else {
             this.opacity = Math.max(0.18, this.opacity - 0.01);
@@ -175,8 +171,8 @@ export const InteractiveBackground = () => {
 
     const initParticles = () => {
       particles = [];
-      // Dense neural layout
-      let numberOfParticles = Math.floor((width * height) / 5000); 
+      // Sparser elegant neural layout
+      let numberOfParticles = Math.floor((width * height) / 20000); 
       for (let i = 0; i < numberOfParticles; i++) {
         let x = Math.random() * width;
         let y = Math.random() * height;
@@ -214,17 +210,20 @@ export const InteractiveBackground = () => {
       const xRight = width - 50;
       const yPositions = [height * 0.25, height * 0.5, height * 0.75];
       const size = 18;
+      const halfWidth = size * 0.85;
+      const heightOffset = size * 0.35;
+      const spacing = 12; // vertical stacking spacing
 
       const isDown = scrollState === 'down';
       const isUp = scrollState === 'up';
       const intensity = scrollActivity;
 
       // Base idle color: dim outlines
-      const idleColor = 'rgba(255, 255, 255, 0.04)';
+      const idleColor = 'rgba(255, 255, 255, 0.05)';
       const activeColor = isDown ? '#00f2fe' : '#f43f5e';
       
-      // Cascade highlighting speed offset
-      const phase = Math.floor(Date.now() / 110) % 3;
+      // Cascade highlighting speed offset across 4 chevrons
+      const phase = Math.floor(Date.now() / 90) % 4; // 0, 1, 2, 3
 
       ctx.save();
       ctx.lineJoin = 'miter';
@@ -234,24 +233,18 @@ export const InteractiveBackground = () => {
         [xLeft, xRight].forEach(x => {
           const pointingDown = !isUp; // default points down
 
-          for (let i = 0; i < 3; i++) {
+          // Draw 4 chevrons: k = 0 (head), k = 1 (tail 1), k = 2 (tail 2), k = 3 (tail 3)
+          for (let k = 0; k < 4; k++) {
             let color = idleColor;
-            let drawSolid = i === 0;
             let blur = 0;
 
             if (!isIdle && intensity > 0) {
-              let isHighlighted = false;
-              if (isDown) {
-                // Downward cascade: Tail (2) -> Middle (1) -> Tip (0)
-                isHighlighted = (2 - i) === phase;
-              } else {
-                // Upward cascade: Tip (0) -> Middle (1) -> Tail (2)
-                isHighlighted = i === phase;
-              }
+              // Scroll cascade: light flows from tail (k = 3) to head (k = 0)
+              const isHighlighted = (3 - k) === phase;
 
               if (isHighlighted) {
                 color = activeColor;
-                blur = 15;
+                blur = 16;
               } else {
                 // Faded ambient active color
                 color = isDown 
@@ -264,46 +257,25 @@ export const InteractiveBackground = () => {
             ctx.shadowColor = activeColor;
             ctx.shadowBlur = blur;
 
-            const offsetMultiplier = pointingDown ? -1 : 1;
-            const cy = y + (i * size * 0.55 * offsetMultiplier);
+            // Stack vertically: head is at the leading scroll tip, tails follow behind
+            const offsetMultiplier = pointingDown ? 1 : -1;
+            const cy = y + ((1.5 - k) * spacing * offsetMultiplier);
 
-            // Draw leading chevron as solid block when highlighted during active scroll
-            if (drawSolid && (!isIdle && intensity > 0 && (isDown ? (2 - i === phase) : (i === phase)))) {
-              ctx.beginPath();
-              if (pointingDown) {
-                ctx.moveTo(x - size, cy - size * 0.5);
-                ctx.lineTo(x, cy + size * 0.5);
-                ctx.lineTo(x + size, cy - size * 0.5);
-                ctx.lineTo(x + size * 0.5, cy - size * 0.5);
-                ctx.lineTo(x, cy + size * 0.05);
-                ctx.lineTo(x - size * 0.5, cy - size * 0.5);
-              } else {
-                ctx.moveTo(x - size, cy + size * 0.5);
-                ctx.lineTo(x, cy - size * 0.5);
-                ctx.lineTo(x + size, cy + size * 0.5);
-                ctx.lineTo(x + size * 0.5, cy + size * 0.5);
-                ctx.lineTo(x, cy - size * 0.05);
-                ctx.lineTo(x - size * 0.5, cy + size * 0.5);
-              }
-              ctx.closePath();
-              ctx.fillStyle = color;
-              ctx.fill();
+            // Draw cyberpunk chevron stroke outline
+            ctx.beginPath();
+            if (pointingDown) {
+              ctx.moveTo(x - halfWidth, cy - heightOffset);
+              ctx.lineTo(x, cy + heightOffset);
+              ctx.lineTo(x + halfWidth, cy - heightOffset);
             } else {
-              // Draw chevron outline vector
-              ctx.beginPath();
-              if (pointingDown) {
-                ctx.moveTo(x - size, cy - size * 0.5);
-                ctx.lineTo(x, cy + size * 0.5);
-                ctx.lineTo(x + size, cy - size * 0.5);
-              } else {
-                ctx.moveTo(x - size, cy + size * 0.5);
-                ctx.lineTo(x, cy - size * 0.5);
-                ctx.lineTo(x + size, cy + size * 0.5);
-              }
-              ctx.strokeStyle = color;
-              ctx.lineWidth = i === 2 ? 1.8 : 3.2; // tail has thinner stroke
-              ctx.stroke();
+              ctx.moveTo(x - halfWidth, cy + heightOffset);
+              ctx.lineTo(x, cy - heightOffset);
+              ctx.lineTo(x + halfWidth, cy + heightOffset);
             }
+            ctx.strokeStyle = color;
+            // Head (k = 0) is slightly thicker than the tail elements for definition
+            ctx.lineWidth = k === 0 ? 4.5 : 3.2;
+            ctx.stroke();
           }
         });
       });

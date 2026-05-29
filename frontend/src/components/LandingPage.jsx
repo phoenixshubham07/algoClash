@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CyberButton } from './CyberButton';
 import { CyberCard } from './CyberCard';
@@ -7,6 +7,19 @@ import { InteractiveBackground } from './InteractiveBackground';
 
 export const LandingPage = ({ onNavigateToArena }) => {
   const [activeCompareTab, setActiveCompareTab] = useState('leetcode');
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 120) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const comparisonData = {
     leetcode: {
@@ -237,16 +250,28 @@ export const LandingPage = ({ onNavigateToArena }) => {
 
       {/* HEADER / NAVIGATION BAR */}
       <header style={{
-        position: 'relative',
-        zIndex: 20,
+        position: 'fixed',
+        top: '16px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 100,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '20px 5%',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        backgroundColor: 'rgba(2,2,3,0.92)',
-        backdropFilter: 'blur(12px)'
+        padding: '14px 40px',
+        width: '90%',
+        maxWidth: '1300px',
+        backgroundColor: 'rgba(10, 10, 12, 0.42)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(0, 242, 254, 0.22)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8), 0 0 25px rgba(0, 242, 254, 0.12), inset 0 0 12px rgba(0, 242, 254, 0.06)',
+        clipPath: 'polygon(0% 0%, 98% 0%, 100% 12px, 100% 100%, 2% 100%, 0% calc(100% - 12px))',
+        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
       }}>
+        {/* HUD Frame Decorative Corner Points */}
+        <div style={{ position: 'absolute', top: 0, left: '20px', width: '40px', height: '2px', backgroundColor: 'var(--accent-cyan)' }}></div>
+        <div style={{ position: 'absolute', bottom: 0, right: '20px', width: '40px', height: '2px', backgroundColor: 'var(--accent-crimson)' }}></div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {/* Small 18-degree mini clashing icon */}
           <div style={{ display: 'flex', gap: '2px', height: '18px', width: '26px' }}>
@@ -256,13 +281,24 @@ export const LandingPage = ({ onNavigateToArena }) => {
           <span className="font-display" style={{ fontWeight: '900', fontSize: '20px', letterSpacing: '0.2em', color: '#fff' }}>
             ALGO<span style={{ color: 'var(--accent-cyan)' }}>CLASH</span>
           </span>
+          <span style={{ fontSize: '8px', color: 'rgba(0, 242, 254, 0.6)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(0, 242, 254, 0.3)', padding: '2px 6px', borderRadius: '2px', letterSpacing: '0.1em' }}>
+            SYS_LOC: DUEL_STAGING
+          </span>
         </div>
 
         <div style={{ display: 'flex', gap: '32px', fontSize: '10px', fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>
-          <a href="#logo-fold" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">IDENTITY</a>
-          <a href="#tech-moat" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">ANTI-CHEAT</a>
-          <a href="#ui-preview" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">IN-GAME HUD</a>
-          <a href="#combat-contrast" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">COMBAT</a>
+          <a href="#logo-fold" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '4px' }} className="cyber-glitch-text">
+            <span style={{ color: 'var(--accent-cyan)' }}>//</span> IDENTITY
+          </a>
+          <a href="#tech-moat" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '4px' }} className="cyber-glitch-text">
+            <span style={{ color: 'var(--accent-cyan)' }}>//</span> ANTI-CHEAT
+          </a>
+          <a href="#ui-preview" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '4px' }} className="cyber-glitch-text">
+            <span style={{ color: 'var(--accent-cyan)' }}>//</span> IN-GAME HUD
+          </a>
+          <a href="#combat-contrast" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '4px' }} className="cyber-glitch-text">
+            <span style={{ color: 'var(--accent-cyan)' }}>//</span> COMBAT
+          </a>
         </div>
 
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -288,7 +324,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '88vh',
-          padding: '60px 5%',
+          padding: '140px 5% 60px 5%', // offset the fixed floating navbar height
           textAlign: 'center',
           maxWidth: '1200px',
           margin: '0 auto'
@@ -297,8 +333,21 @@ export const LandingPage = ({ onNavigateToArena }) => {
 
 
         {/* Trophy and Clashing Cursors in Hero Section */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
-          
+        <motion.div 
+          animate={{
+            opacity: scrolled ? 0 : 1,
+            y: scrolled ? -25 : 0,
+            scale: scrolled ? 0.8 : 1
+          }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            marginBottom: '32px',
+            pointerEvents: scrolled ? 'none' : 'auto'
+          }}
+        >
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '16px', position: 'relative' }}>
             
             {/* Trophy on top of the 2 cursors */}
@@ -306,20 +355,20 @@ export const LandingPage = ({ onNavigateToArena }) => {
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1.0, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.2 }}
-              style={{ width: '32px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: '64px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               className="bounce-trophy-landing"
             >
-              {renderTrophySVG(32)}
+              {renderTrophySVG(64)}
             </motion.div>
 
             {/* Symmetrical clashing cursors */}
-            <div style={{ display: 'flex', gap: '4px', height: '36px', width: '52px', position: 'relative' }}>
+            <div style={{ display: 'flex', gap: '8px', height: '72px', width: '104px', position: 'relative' }}>
               {/* Left Cyan Cursor */}
               <motion.div 
                 initial={{ x: -60, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 80, damping: 15, delay: 0.1 }}
-                style={{ transform: 'rotate(18deg)', transformOrigin: 'right top', filter: 'drop-shadow(0 0 12px var(--accent-cyan))', width: '24px', height: '34px' }}
+                style={{ transform: 'rotate(18deg)', transformOrigin: 'right top', filter: 'drop-shadow(0 0 20px var(--accent-cyan))', width: '48px', height: '68px' }}
                 className="cursor-float-left"
               >
                 <div className="cursor-flicker" style={{ width: '100%', height: '100%' }}>
@@ -332,7 +381,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
                 initial={{ x: 60, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 80, damping: 15, delay: 0.1 }}
-                style={{ transform: 'rotate(-18deg)', transformOrigin: 'left top', filter: 'drop-shadow(0 0 12px var(--accent-crimson))', width: '24px', height: '34px' }}
+                style={{ transform: 'rotate(-18deg)', transformOrigin: 'left top', filter: 'drop-shadow(0 0 20px var(--accent-crimson))', width: '48px', height: '68px' }}
                 className="cursor-float-right"
               >
                 <div className="cursor-flicker-crimson" style={{ width: '100%', height: '100%' }}>
@@ -342,7 +391,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
             </div>
             
           </div>
-        </div>
+        </motion.div>
 
         {/* OFFICIAL STENCILED OPTION WORDMARK WITH EXPANSION ANIMATION */}
         <div style={{ position: 'relative', whiteSpace: 'nowrap', marginBottom: '28px' }}>
@@ -355,7 +404,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
               alignItems: 'center', 
               justifyContent: 'center', 
               fontFamily: "'Space Grotesk', sans-serif", 
-              fontSize: 'clamp(32px, 6.5vw, 68px)', 
+              fontSize: 'clamp(38px, 7.8vw, 82px)', 
               fontWeight: 900, 
               color: '#fff', 
               userSelect: 'none', 
@@ -368,7 +417,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
             initial={{ opacity: 0, x: 95, skewX: -18 }}
             animate={{ opacity: 1, x: 0, skewX: -18 }}
             transition={{ type: 'spring', stiffness: 90, damping: 14, delay: 0.1 }}
-            style={{ display: 'inline-block', color: 'var(--accent-cyan)', marginRight: '8px', textShadow: '0 0 10px rgba(0, 242, 254, 0.4)' }}
+            style={{ display: 'inline-block', color: 'var(--accent-crimson)', marginRight: '8px', textShadow: '0 0 12px rgba(244, 63, 94, 0.65)' }}
           >
             &lt;
           </motion.span>
@@ -463,17 +512,17 @@ export const LandingPage = ({ onNavigateToArena }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.4 }}
               style={{ 
-                fontSize: '11px', 
+                fontSize: '18px', 
                 fontWeight: 800,
                 letterSpacing: '0.65em', 
                 color: 'var(--accent-crimson)', 
-                textShadow: '0 0 8px rgba(244, 63, 94, 0.8)',
+                textShadow: '0 0 12px rgba(244, 63, 94, 0.8)',
                 fontFamily: "'Space Grotesk', sans-serif",
                 textTransform: 'uppercase',
                 display: 'inline-block',
                 transform: 'skewX(-18deg) translateX(-50%)',
                 position: 'absolute',
-                bottom: '-20px',
+                bottom: '-28px',
                 left: '50%',
                 whiteSpace: 'nowrap'
               }}
@@ -487,7 +536,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
             initial={{ opacity: 0, x: -160, skewX: -18 }}
             animate={{ opacity: 1, x: 0, skewX: -18 }}
             transition={{ type: 'spring', stiffness: 90, damping: 14, delay: 0.1 }}
-            style={{ display: 'inline-block', color: 'var(--accent-cyan)', marginLeft: '8px', textShadow: '0 0 10px rgba(0, 242, 254, 0.4)' }}
+            style={{ display: 'inline-block', color: 'var(--accent-crimson)', marginLeft: '8px', textShadow: '0 0 12px rgba(244, 63, 94, 0.65)' }}
           >
             &gt;
           </motion.span>
@@ -506,7 +555,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
             alignItems: 'center', 
             gap: '16px',
             fontFamily: 'var(--font-mono)',
-            fontSize: '18px',
+            fontSize: '26px',
             fontWeight: '900',
             letterSpacing: '0.25em',
             textTransform: 'uppercase',
@@ -537,7 +586,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           
           <span style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: '11px',
+            fontSize: '15px',
             letterSpacing: '0.15em',
             color: 'var(--text-secondary)',
             fontWeight: '600',
@@ -557,11 +606,11 @@ export const LandingPage = ({ onNavigateToArena }) => {
           transition={{ duration: 0.5, delay: 0.55 }}
           style={{ display: 'flex', gap: '16px', zIndex: 10 }}
         >
-          <CyberButton variant="primary" size="lg" onClick={() => onNavigateToArena(null)}>
+          <CyberButton variant="primary" size="md" onClick={() => onNavigateToArena(null)}>
             ENTER THE BATTLEFIELD
           </CyberButton>
           <a href="#tech-moat" style={{ textDecoration: 'none' }}>
-            <CyberButton variant="ghost" size="lg">
+            <CyberButton variant="ghost" size="md">
               VIEW TELEMETRY SPECS
             </CyberButton>
           </a>
@@ -605,7 +654,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           position: 'relative',
           zIndex: 10,
           padding: '120px 5%',
-          backgroundColor: 'var(--bg-carbon)',
+          backgroundColor: 'rgba(3, 3, 4, 0.45)',
           borderTop: '1px solid rgba(255,255,255,0.03)',
           borderBottom: '1px solid rgba(255,255,255,0.03)'
         }}
@@ -869,7 +918,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           position: 'relative',
           zIndex: 10,
           padding: '100px 5%',
-          backgroundColor: '#000000',
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
           borderBottom: '1px solid rgba(255,255,255,0.03)'
         }}
       >
@@ -960,7 +1009,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           position: 'relative',
           zIndex: 10,
           padding: '80px 5%',
-          backgroundColor: 'var(--bg-carbon)',
+          backgroundColor: 'rgba(3, 3, 4, 0.45)',
           borderBottom: '1px solid rgba(255,255,255,0.03)'
         }}
       >
@@ -1054,7 +1103,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           position: 'relative',
           zIndex: 10,
           padding: '80px 5%',
-          backgroundColor: '#000000',
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
           borderBottom: '1px solid rgba(255,255,255,0.03)'
         }}
       >
@@ -1135,7 +1184,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
         zIndex: 10,
         padding: '64px 5% 40px 5%',
         borderTop: '1px solid rgba(255,255,255,0.05)',
-        backgroundColor: '#020203',
+        backgroundColor: 'rgba(2, 2, 3, 0.6)',
         textAlign: 'center'
       }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
@@ -1162,6 +1211,56 @@ export const LandingPage = ({ onNavigateToArena }) => {
           © 2026 ALGOCLASH. NO COPYRIGHTS RESERVED. TACTICAL COMBAT ZONE.
         </div>
       </footer>
+
+      {/* FLOATING LOGO (BOTTOM RIGHT) WHEN SCROLLED */}
+      <motion.div
+        animate={{
+          opacity: scrolled ? 1 : 0,
+          scale: scrolled ? 0.65 : 0.2,
+          y: scrolled ? 0 : 50,
+        }}
+        transition={{ type: 'spring', stiffness: 120, damping: 14 }}
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        style={{
+          position: 'fixed',
+          bottom: '32px',
+          right: '32px',
+          zIndex: 90,
+          cursor: 'pointer',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          backgroundColor: 'rgba(10, 10, 12, 0.72)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(0, 242, 254, 0.25)',
+          padding: '16px 20px',
+          clipPath: 'polygon(0% 0%, 90% 0%, 100% 10px, 100% 100%, 10% 100%, 0% calc(100% - 10px))',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 242, 254, 0.1)',
+          pointerEvents: scrolled ? 'auto' : 'none'
+        }}
+        whileHover={{
+          scale: 0.7,
+          borderColor: 'var(--accent-cyan)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.7), 0 0 25px rgba(0, 242, 254, 0.2)'
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+          <div style={{ width: '38px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="bounce-trophy-landing">
+            {renderTrophySVG(38)}
+          </div>
+          <div style={{ display: 'flex', gap: '4px', height: '42px', width: '60px', position: 'relative' }}>
+            <div style={{ transform: 'rotate(18deg)', transformOrigin: 'right top', filter: 'drop-shadow(0 0 12px var(--accent-cyan))', width: '28px', height: '40px' }} className="cursor-float-left">
+              {renderCursor('cyan', true)}
+            </div>
+            <div style={{ transform: 'rotate(-18deg)', transformOrigin: 'left top', filter: 'drop-shadow(0 0 12px var(--accent-crimson))', width: '28px', height: '40px' }} className="cursor-float-right">
+              {renderCursor('crimson', false)}
+            </div>
+          </div>
+        </div>
+        <span style={{ fontSize: '8px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', marginTop: '8px', letterSpacing: '0.15em', fontWeight: 'bold' }}>
+          ASCEND // TO_TOP
+        </span>
+      </motion.div>
 
     </div>
   );
