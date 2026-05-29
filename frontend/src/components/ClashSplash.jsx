@@ -336,8 +336,8 @@ export const ClashSplash = ({ onFinish }) => {
       setGloveForm('pointer');
     });
 
-    tl.to(leftGloveRef.current, { x: "0vw", opacity: 1, duration: 0.32, ease: "power2.out" }, "+=0.1");
-    tl.to(rightGloveRef.current, { x: "0vw", opacity: 1, duration: 0.32, ease: "power2.out" }, "<");
+    tl.to(leftGloveRef.current, { x: "25px", opacity: 1, duration: 0.32, ease: "power2.out" }, "+=0.1");
+    tl.to(rightGloveRef.current, { x: "-25px", opacity: 1, duration: 0.32, ease: "power2.out" }, "<");
 
     // Midway form swap (0.16s relative to start of approach)
     tl.call(() => {
@@ -437,8 +437,16 @@ export const ClashSplash = ({ onFinish }) => {
             
             let fill = "#FFFFFF"; 
             const isColliding = phase === 'gloves_impact';
-            
+            let isContactSurface = false;
             if (isColliding) {
+              if (gloveForm === 'pointer') {
+                isContactSurface = rIdx < 6;
+              } else {
+                isContactSurface = mirrored ? cIdx > 12 : cIdx < 7;
+              }
+            }
+            
+            if (isContactSurface) {
               if (cell === 1) fill = "#3e1200"; // Burnt outline
               if (cell === 2) fill = "#ff3d00"; // Glowing red-orange
               if (cell === 3) fill = "#ffa726"; // Heated body orange
@@ -486,8 +494,12 @@ export const ClashSplash = ({ onFinish }) => {
             
             let fill = "#00f2fe"; 
             const isColliding = phase === 'cursors_impact';
-            
+            let isContactSurface = false;
             if (isColliding) {
+              isContactSurface = rIdx < 5 && (mirrored ? cIdx > 6 : cIdx < 5);
+            }
+            
+            if (isContactSurface) {
               if (cell === 1) fill = "#3e1200"; // Burnt outline
               if (cell === 2) fill = "#ff3d00"; // Glowing red-orange
               if (cell === 3) fill = "#ffa726"; // Heated body orange
