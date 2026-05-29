@@ -6,10 +6,15 @@ import { WordmarkTestPage } from './components/WordmarkTestPage';
 import { LoginPage } from './components/LoginPage';
 import { BrandIdentityPage } from './components/BrandIdentityPage';
 import { CyberCursor } from './components/CyberCursor';
+import { InteractiveBackgroundPage } from './components/InteractiveBackgroundPage';
 
 function App() {
   // Splash screen is enabled by default on the root route to show on refresh / startup
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(
+    window.location.pathname === '/' || 
+    window.location.pathname === '' || 
+    window.location.pathname === '/index.html'
+  );
   const [view, setView] = useState('landing'); // landing | arena
   const [initialOpponent, setInitialOpponent] = useState(null);
 
@@ -49,6 +54,16 @@ function App() {
       <>
         <CyberCursor />
         <ClashSplash onFinish={() => window.location.href = '/'} />
+      </>
+    );
+  }
+
+  // Check for path-based routing for interactive background staging page
+  if (window.location.pathname === '/background' || window.location.pathname === '/backgrounds') {
+    return (
+      <>
+        <CyberCursor />
+        <InteractiveBackgroundPage />
       </>
     );
   }

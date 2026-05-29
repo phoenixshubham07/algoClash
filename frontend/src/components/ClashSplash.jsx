@@ -223,19 +223,13 @@ export const ClashSplash = ({ onFinish }) => {
 
   // Lock scrolling and hide mouse cursor on body initially
   useEffect(() => {
-    const isHero = phase === 'hero_morph';
-    if (!isHero) {
-      document.body.classList.add('hide-custom-cursor');
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.classList.remove('hide-custom-cursor');
-      document.body.style.overflow = 'unset';
-    }
+    document.body.classList.add('hide-custom-cursor');
+    document.body.style.overflow = 'hidden';
     return () => {
       document.body.classList.remove('hide-custom-cursor');
       document.body.style.overflow = 'unset';
     };
-  }, [phase]);
+  }, []);
 
   // Auto-run clashing intro on mount
   useEffect(() => {
@@ -480,23 +474,6 @@ export const ClashSplash = ({ onFinish }) => {
     
     // Hold reveal for 1.2s to make it impactful
     tl.to({}, { duration: 1.2 });
-
-    // --- 7. HERO MORPH ---
-    tl.call(() => {
-      setPhase('hero_morph');
-    });
-
-    // Fade out black overlay and CONQUER text
-    tl.to(blackOverlayRef.current, { opacity: 0, duration: 0.5 });
-    tl.to(conquerTextRef.current, { opacity: 0, scale: 0.8, duration: 0.4 }, "<");
-
-    // Scale the trophy to 0.286 (almost same size as cursors) and place it above the two cursors (which clash in center)
-    tl.to(trophyRef.current, { x: "0px", y: "-114px", scale: 0.286, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
-    tl.to(leftCursorRef.current, { x: "-2px", y: "-84px", scale: 0.667, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
-    tl.to(rightCursorRef.current, { x: "2px", y: "-84px", scale: 0.667, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
-
-    // Let the finished state settle for 1.0s before auto-entering
-    tl.to({}, { duration: 1.0 });
   };
 
 
@@ -677,68 +654,16 @@ export const ClashSplash = ({ onFinish }) => {
     pointerEvents: 'none'
   };
 
-  const showTrophy = phase === 'hero_morph';
-
   return (
     <div ref={containerRef} style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'none', fontFamily: 'var(--font-mono)' }}>
       {/* BACKGROUND GRAPHICS & TEXTURES */}
       <div className="grid-bg"></div>
       <div className="scanlines"></div>
 
-      {/* HEADER / NAVIGATION BAR REPLICA (Initially hidden, fades in with hero) */}
-      <motion.header 
-        initial={{ opacity: 0, y: -20 }}
-        animate={showTrophy ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 20,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '20px 5%',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
-          backgroundColor: 'rgba(2,2,3,0.92)',
-          backdropFilter: 'blur(12px)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Small 18-degree mini clashing icon */}
-          <div style={{ display: 'flex', gap: '2px', height: '18px', width: '26px' }}>
-            <div style={{ transform: 'rotate(18deg) scale(0.65)', transformOrigin: 'right top' }}>{renderCursor('cyan', true)}</div>
-            <div style={{ transform: 'rotate(-18deg) scale(0.65)', transformOrigin: 'left top' }}>{renderCursor('crimson', false)}</div>
-          </div>
-          <span className="font-display" style={{ fontWeight: '900', fontSize: '20px', letterSpacing: '0.2em', color: '#fff' }}>
-            ALGO<span style={{ color: 'var(--accent-cyan)' }}>CLASH</span>
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', gap: '32px', fontSize: '10px', fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>
-          <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.15em', cursor: 'default' }}>IDENTITY</span>
-          <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.15em', cursor: 'default' }}>ANTI-CHEAT</span>
-          <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.15em', cursor: 'default' }}>IN-GAME HUD</span>
-          <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.15em', cursor: 'default' }}>COMBAT</span>
-        </div>
-
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <CyberButton variant="ghost" size="sm">
-            LOG IN
-          </CyberButton>
-          <CyberButton variant="primary" size="sm">
-            LAUNCH SIMULATOR
-          </CyberButton>
-        </div>
-      </motion.header>
-
-
-
       {/* Canvas spark physics */}
       <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 100 }} />
 
-      {/* CENTER CLASH AREA / HERO SECTION REPLICA */}
+      {/* CENTER CLASH AREA */}
       <section 
         id="logo-fold"
         style={{
@@ -776,7 +701,7 @@ export const ClashSplash = ({ onFinish }) => {
 
         {/* Left Cyan Cursor Container */}
         <div ref={leftCursorRef} style={leftCursorStyle}>
-          <div style={{ animation: (phase === 'cursors_approach' || phase === 'hero_morph') ? 'cursor-float-left 4s ease-in-out infinite' : 'none' }}>
+          <div style={{ animation: (phase === 'cursors_approach') ? 'cursor-float-left 4s ease-in-out infinite' : 'none' }}>
             <div 
               className={phase === 'cursors_impact' ? 'grinding-shake' : ''}
               style={{
@@ -794,7 +719,7 @@ export const ClashSplash = ({ onFinish }) => {
 
         {/* Right Crimson Cursor Container */}
         <div ref={rightCursorRef} style={rightCursorStyle}>
-          <div style={{ animation: (phase === 'cursors_approach' || phase === 'hero_morph') ? 'cursor-float-right 4s ease-in-out infinite' : 'none' }}>
+          <div style={{ animation: (phase === 'cursors_approach') ? 'cursor-float-right 4s ease-in-out infinite' : 'none' }}>
             <div 
               className={phase === 'cursors_impact' ? 'grinding-shake' : ''}
               style={{
@@ -912,220 +837,6 @@ export const ClashSplash = ({ onFinish }) => {
             <path d="M 238 0 L 274 0 L 274 10 L 250 10 L 250 18 L 268 18 L 268 28 L 250 28 L 250 36 L 274 36 L 274 46 L 238 46 Z" fill="currentColor" />
             <path d="M 284 0 L 312 0 L 320 8 L 320 20 L 312 28 L 320 46 L 308 46 L 302 28 L 296 28 L 296 46 L 284 46 Z M 296 10 L 308 10 L 308 18 L 296 18 Z" fill="currentColor" fillRule="evenodd" />
           </svg>
-        </div>
-
-        {/* OFFICIAL STENCILED OPTION WORDMARK WITH EXPANSION ANIMATION */}
-        <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 15, whiteSpace: 'nowrap' }}>
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={showTrophy ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              fontFamily: "'Space Grotesk', sans-serif", 
-              fontSize: 'clamp(32px, 6.5vw, 68px)', 
-              fontWeight: 900, 
-              color: '#fff', 
-              userSelect: 'none', 
-              padding: '24px 0',
-              filter: 'drop-shadow(0 0 20px rgba(0,242,254,0.05))'
-            }}
-          >
-            {/* Left Sleek Skewed Bracket */}
-            <motion.span 
-              initial={{ opacity: 0, x: 95, skewX: -18 }}
-              animate={showTrophy ? { opacity: 1, x: 0, skewX: -18 } : { opacity: 0, x: 95, skewX: -18 }}
-              transition={{ type: 'spring', stiffness: 90, damping: 14, delay: 0.1 }}
-              style={{ display: 'inline-block', color: 'var(--accent-cyan)', marginRight: '8px', textShadow: '0 0 10px rgba(0, 242, 254, 0.4)' }}
-            >
-              &lt;
-            </motion.span>
-
-            {/* algo (lowercase) simple upright Space Grotesk */}
-            <span style={{ display: 'flex', color: '#fff', letterSpacing: '0.04em', fontWeight: 400, fontStyle: 'normal', fontFamily: "'Space Grotesk', sans-serif", textTransform: 'none' }}>
-              {'algo'.split('').map((char, idx) => (
-                <motion.span 
-                  key={`algo-${idx}`}
-                  initial={{ opacity: 0, x: 15 }}
-                  animate={showTrophy ? { opacity: 1, x: 0 } : { opacity: 0, x: 15 }}
-                  transition={{ type: 'spring', stiffness: 100, damping: 12, delay: 0.2 + (3 - idx) * 0.05 }}
-                  style={{ display: 'inline-block' }}
-                >
-                  {char}
-                </motion.span>
-              ))}
-            </span>
-
-            {/* Red Option Separator skewed at 18-deg */}
-            <motion.span 
-              initial={{ opacity: 0, scale: 0, skewX: -18 }}
-              animate={showTrophy ? { opacity: 1, scale: 1, skewX: -18 } : { opacity: 0, scale: 0, skewX: -18 }}
-              transition={{ type: 'spring', stiffness: 120, damping: 10, delay: 0.05 }}
-              style={{ display: 'inline-block', marginLeft: '-0.02em', marginRight: '0.12em', color: 'var(--accent-crimson)', textShadow: '0 0 12px rgba(244, 63, 94, 0.65)' }}
-            >
-              ⌥
-            </motion.span>
-
-            {/* CLASH with Katakana subtitle */}
-            <div style={{ display: 'inline-flex', position: 'relative', alignItems: 'center' }}>
-              <motion.span 
-                initial={{ opacity: 0, x: -15 }}
-                animate={showTrophy ? { opacity: 1, x: 0 } : { opacity: 0, x: -15 }}
-                transition={{ type: 'spring', stiffness: 100, damping: 12, delay: 0.2 }}
-                style={{ 
-                  display: 'inline-flex', 
-                  alignItems: 'center',
-                  color: 'var(--accent-cyan)',
-                  filter: 'drop-shadow(0 0 12px rgba(0, 242, 254, 0.5))',
-                  transform: 'skewX(-18deg)',
-                  marginLeft: '0.04em'
-                }}
-              >
-                <svg style={{ height: '0.72em', width: 'auto', display: 'block' }} viewBox="0 0 224 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M 0 8 L 8 0 L 36 0 L 36 10 L 12 10 L 12 36 L 36 36 L 36 46 L 8 46 L 0 38 Z" fill="currentColor" />
-                  <path d="M 46 0 L 58 0 L 58 36 L 82 36 L 82 46 L 46 46 Z" fill="currentColor" />
-                  <path d="M 92 46 L 92 8 L 100 0 L 120 0 L 128 8 L 128 46 L 116 46 L 116 30 L 104 30 L 104 46 Z M 104 20 L 116 20 L 116 10 L 104 10 Z" fill="currentColor" />
-                  <path d="M 138 8 L 146 0 L 174 0 L 174 10 L 150 10 L 150 18 L 166 18 L 174 26 L 174 38 L 166 46 L 138 46 L 138 36 L 162 36 L 162 28 L 146 28 L 138 20 Z" fill="currentColor" />
-                  <path d="M 184 0 L 196 0 L 196 18 L 212 18 L 212 0 L 224 0 L 224 46 L 212 46 L 212 28 L 196 28 L 196 46 L 184 46 Z" fill="currentColor" />
-                </svg>
-              </motion.span>
-              
-              <motion.span 
-                initial={{ opacity: 0, y: 10 }}
-                animate={showTrophy ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-                transition={{ delay: 0.6, duration: 0.4 }}
-                style={{ 
-                  fontSize: '11px', 
-                  fontWeight: 800,
-                  letterSpacing: '0.65em', 
-                  color: 'var(--accent-crimson)', 
-                  textShadow: '0 0 8px rgba(244, 63, 94, 0.8)',
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  textTransform: 'uppercase',
-                  display: 'inline-block',
-                  transform: 'skewX(-18deg) translateX(-50%)',
-                  position: 'absolute',
-                  bottom: '-20px',
-                  left: '50%',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                クラッシュ
-              </motion.span>
-            </div>
-
-            {/* Right Sleek Skewed Bracket */}
-            <motion.span 
-              initial={{ opacity: 0, x: -160, skewX: -18 }}
-              animate={showTrophy ? { opacity: 1, x: 0, skewX: -18 } : { opacity: 0, x: -160, skewX: -18 }}
-              transition={{ type: 'spring', stiffness: 90, damping: 14, delay: 0.1 }}
-              style={{ display: 'inline-block', color: 'var(--accent-cyan)', marginLeft: '8px', textShadow: '0 0 10px rgba(0, 242, 254, 0.4)' }}
-            >
-              &gt;
-            </motion.span>
-          </motion.div>
-        </div>
-
-        {/* Tagline (Initially hidden, fades in below the wordmark) */}
-        <div style={{ position: 'absolute', left: '50%', top: 'calc(50% + 72px)', transform: 'translateX(-50%)', zIndex: 10, whiteSpace: 'nowrap' }}>
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={showTrophy ? { opacity: 1 } : { opacity: 0 }}
-            transition={{ duration: 0.6, delay: 0.45 }}
-            style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              gap: '16px'
-            }}
-          >
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '16px',
-              fontFamily: 'var(--font-mono)',
-              fontSize: '18px',
-              fontWeight: '900',
-              letterSpacing: '0.25em',
-              textTransform: 'uppercase',
-              fontStyle: 'italic',
-              marginTop: '8px'
-            }}>
-              <span style={{ 
-                color: 'var(--accent-cyan)', 
-                textShadow: '0 0 10px rgba(0, 242, 254, 0.5)'
-              }}>
-                CODE
-              </span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>//</span>
-              <span style={{ 
-                color: 'var(--accent-crimson)', 
-                textShadow: '0 0 10px rgba(244, 63, 94, 0.5)'
-              }}>
-                CLASH
-              </span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>//</span>
-              <span style={{ 
-                color: 'var(--accent-yellow)', 
-                textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
-              }}>
-                CONQUER
-              </span>
-            </div>
-            
-            <span style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '11px',
-              letterSpacing: '0.15em',
-              color: 'var(--text-secondary)',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              marginTop: '4px'
-            }}>
-              [ CODING IS NOT AN EXAM. IT'S A 1V1 DUEL ]
-            </span>
-            
-            <div style={{ height: '2px', width: '80px', background: 'linear-gradient(90deg, transparent, var(--accent-cyan), transparent)', marginTop: '8px' }}></div>
-          </motion.div>
-        </div>
-
-        {/* Mouse Indicator (Initially hidden, fades in at bottom) */}
-        <div style={{ position: 'absolute', left: '50%', bottom: '40px', transform: 'translateX(-50%)', zIndex: 10 }}>
-          <motion.div 
-            initial={{ opacity: 0, y: 12 }}
-            animate={showTrophy ? { opacity: 0.65, y: 0 } : { opacity: 0, y: 12 }}
-            transition={{ delay: 0.7, duration: 0.6 }}
-            style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              gap: '12px'
-            }}
-          >
-            <svg width="22" height="36" viewBox="0 0 24 40" fill="none">
-              <rect x="2" y="2" width="20" height="36" rx="10" stroke="var(--accent-cyan)" strokeWidth="1.5" />
-              <motion.circle 
-                cx="12" 
-                cy="12" 
-                r="2" 
-                fill="var(--accent-yellow)"
-                animate={{
-                  y: [0, 16, 0],
-                  opacity: [0.3, 1, 0.3]
-                }}
-                transition={{
-                  duration: 1.8,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
-            </svg>
-            <span style={{ fontSize: '9px', letterSpacing: '0.2em', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
-              SCROLL TO DECRYPT
-            </span>
-          </motion.div>
         </div>
       </section>
 

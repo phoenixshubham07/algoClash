@@ -1,10 +1,114 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CyberButton } from './CyberButton';
 import { CyberCard } from './CyberCard';
 import { TournamentBracket } from './TournamentBracket';
+import { InteractiveBackground } from './InteractiveBackground';
 
 export const LandingPage = ({ onNavigateToArena }) => {
+  const [activeCompareTab, setActiveCompareTab] = useState('leetcode');
+
+  const comparisonData = {
+    leetcode: {
+      title: "VS. LEETCODE // THE SOLITARY GRID",
+      systemCode: "COMP.LC_01",
+      statusText: "DECRYPTED",
+      color: "cyan",
+      accent: "var(--accent-cyan)",
+      deficit: {
+        title: "LEETCODE DEFICITS",
+        metrics: [
+          { name: "REAL-TIME INTERACTION", value: 15 },
+          { name: "ANTI-CHEAT PROCTORING", value: 10 },
+          { name: "COMBAT TENSION", value: 0 }
+        ],
+        logs: [
+          "Blind compiling against silent databases",
+          "Encourages static template copy-pasting",
+          "Zero opponent cursor or code telemetry"
+        ]
+      },
+      advantage: {
+        title: "ALGOCLASH SYSTEMS",
+        metrics: [
+          { name: "CLASH SYMMETRIC ENGAGEMENT", value: 100 },
+          { name: "POSTGRES KEYSTROKE PROCTOR", value: 99 },
+          { name: "COMPILER PRESSURE WAVE", value: 95 }
+        ],
+        logs: [
+          "Live opponent ghost cursor offset tracking",
+          "2-submit hard cap prevents template guessing",
+          "Sensation sways & red warnings at 80% accuracy"
+        ]
+      }
+    },
+    codeforces: {
+      title: "VS. CODEFORCES // COLD LEADERBOARDS",
+      systemCode: "COMP.CF_02",
+      statusText: "DECRYPTED",
+      color: "crimson",
+      accent: "var(--accent-crimson)",
+      deficit: {
+        title: "CODEFORCES DEFICITS",
+        metrics: [
+          { name: "VISUAL TELEMETRY", value: 5 },
+          { name: "SPECTATOR ACCESS", value: 12 },
+          { name: "HUD ENGAGEMENT", value: 8 }
+        ],
+        logs: [
+          "Cold, static table-based scoreboard systems",
+          "Delayed test run scoring calculations",
+          "Zero dynamic feedback during the duel"
+        ]
+      },
+      advantage: {
+        title: "ALGOCLASH SYSTEMS",
+        metrics: [
+          { name: "LIVE TOURNAMENT BRACKETS", value: 100 },
+          { name: "SPECTATOR HUDS & RADAR", value: 98 },
+          { name: "IMPACT SHOCKWAVE SFX", value: 92 }
+        ],
+        logs: [
+          "Sleek visual tournament double-elim brackets",
+          "Auto redirect to sibling duels on finish",
+          "Dynamic visual overlays and score sweeps"
+        ]
+      }
+    },
+    generic: {
+      title: "VS. GENERIC PLATFORMS // EXAM HOLES",
+      systemCode: "COMP.GEN_03",
+      statusText: "DECRYPTED",
+      color: "yellow",
+      accent: "var(--accent-yellow)",
+      deficit: {
+        title: "GENERIC EXAM DEFICITS",
+        metrics: [
+          { name: "TAMPER SHIELD PROTECTION", value: 5 },
+          { name: "MECHANICAL CODE SWAY", value: 20 },
+          { name: "LOG TELEMETRY DENSITY", value: 15 }
+        ],
+        logs: [
+          "Vulnerable to copy-paste ChatGPT injection",
+          "Easy tab-switching bypassing basic proctors",
+          "Zero active coding rhythm analysis"
+        ]
+      },
+      advantage: {
+        title: "ALGOCLASH SYSTEMS",
+        metrics: [
+          { name: "INTELLIGENT TAB-LOCK SHIELD", value: 100 },
+          { name: "KEYSTROKE RHYTHM METRIC", value: 98 },
+          { name: "SECURE POSTGRES SANDBOX", value: 99 }
+        ],
+        logs: [
+          "Mandated browser focus proctor lock system",
+          "Keystroke time-delta analysis blocks copy-pastes",
+          "Immutable security logs prevent bypasses"
+        ]
+      }
+    }
+  };
   // Programmatic 12x17 Classic Retro Cursors (image_0aeeab.png Matrix Map)
   const classicCursorGrid = [
     [1,1,0,0,0,0,0,0,0,0,0,0],
@@ -128,7 +232,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '100vh', backgroundColor: 'var(--bg-black)', overflow: 'hidden' }}>
       {/* BACKGROUND GRAPHICS & TEXTURES */}
-      <div className="grid-bg"></div>
+      <InteractiveBackground />
       <div className="scanlines"></div>
 
       {/* HEADER / NAVIGATION BAR */}
@@ -203,6 +307,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
               animate={{ scale: 1.0, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.2 }}
               style={{ width: '32px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              className="bounce-trophy-landing"
             >
               {renderTrophySVG(32)}
             </motion.div>
@@ -212,37 +317,27 @@ export const LandingPage = ({ onNavigateToArena }) => {
               {/* Left Cyan Cursor */}
               <motion.div 
                 initial={{ x: -60, opacity: 0 }}
-                animate={{ 
-                  x: 0, 
-                  opacity: 1,
-                  y: [0, -4, 0]
-                }}
-                transition={{ 
-                  x: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
-                  opacity: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
-                  y: { repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.8 }
-                }}
-                style={{ transform: 'rotate(18deg)', transformOrigin: 'right top', filter: 'drop-shadow(0 0 6px var(--accent-cyan))', width: '24px', height: '34px' }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 80, damping: 15, delay: 0.1 }}
+                style={{ transform: 'rotate(18deg)', transformOrigin: 'right top', filter: 'drop-shadow(0 0 12px var(--accent-cyan))', width: '24px', height: '34px' }}
+                className="cursor-float-left"
               >
-                {renderCursor('cyan', true)}
+                <div className="cursor-flicker" style={{ width: '100%', height: '100%' }}>
+                  {renderCursor('cyan', true)}
+                </div>
               </motion.div>
 
               {/* Right Crimson Cursor */}
               <motion.div 
                 initial={{ x: 60, opacity: 0 }}
-                animate={{ 
-                  x: 0, 
-                  opacity: 1,
-                  y: [0, 4, 0]
-                }}
-                transition={{ 
-                  x: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
-                  opacity: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
-                  y: { repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.8 }
-                }}
-                style={{ transform: 'rotate(-18deg)', transformOrigin: 'left top', filter: 'drop-shadow(0 0 6px var(--accent-crimson))', width: '24px', height: '34px' }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 80, damping: 15, delay: 0.1 }}
+                style={{ transform: 'rotate(-18deg)', transformOrigin: 'left top', filter: 'drop-shadow(0 0 12px var(--accent-crimson))', width: '24px', height: '34px' }}
+                className="cursor-float-right"
               >
-                {renderCursor('crimson', false)}
+                <div className="cursor-flicker-crimson" style={{ width: '100%', height: '100%' }}>
+                  {renderCursor('crimson', false)}
+                </div>
               </motion.div>
             </div>
             
@@ -525,63 +620,243 @@ export const LandingPage = ({ onNavigateToArena }) => {
             <div style={{ width: '80px', height: '2px', backgroundColor: 'var(--accent-cyan)', margin: '12px auto 0 auto' }}></div>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '32px'
+          {/* Tactical Selector Tabs */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            gap: '16px', 
+            marginBottom: '40px', 
+            flexWrap: 'wrap', 
+            width: '100%',
+            position: 'relative',
+            zIndex: 20
           }}>
-            
-            {/* Card 1: VS LeetCode */}
-            <div style={{ position: 'relative' }}>
-              <div className="hazard-stripes-cyan" style={{ height: '4px', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 20 }}></div>
-              <CyberCard variant="primary" title="VS. LEETCODE // THE SOLITARY GRID" systemCode="COMP.LC_01" statusText="ACTIVE">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontFamily: 'var(--font-mono)', fontSize: '12px', marginTop: '8px' }}>
-                  <div style={{ borderLeft: '2px solid rgba(244,63,94,0.4)', paddingLeft: '8px', opacity: 0.65 }}>
-                    <span style={{ color: 'var(--accent-crimson)' }}>LEETCODE:</span>
-                    <p style={{ fontSize: '11px', marginTop: '2px' }}>Blind, solitary compilers. Memorizing standard questions and template solutions.</p>
-                  </div>
-                  <div style={{ borderLeft: '2px solid var(--accent-cyan)', paddingLeft: '8px' }}>
-                    <span style={{ color: 'var(--accent-cyan)' }}>ALGOCLASH:</span>
-                    <p style={{ fontSize: '11px', marginTop: '2px', color: 'var(--text-primary)' }}>1v1 digital combat. Real-time opponent cursor tracking, test case sway feedback, and mechanical pressure.</p>
-                  </div>
-                </div>
-              </CyberCard>
+            {Object.keys(comparisonData).map((key) => {
+              const item = comparisonData[key];
+              const isActive = activeCompareTab === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setActiveCompareTab(key)}
+                  style={{
+                    backgroundColor: isActive ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.4)',
+                    border: '1px solid',
+                    borderColor: isActive ? item.accent : 'rgba(255,255,255,0.08)',
+                    color: isActive ? '#fff' : 'var(--text-secondary)',
+                    padding: '16px 24px',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                    clipPath: 'polygon(0% 0%, 90% 0%, 100% 10px, 100% 100%, 10% 100%, 0% calc(100% - 10px))',
+                    boxShadow: isActive ? `0 0 20px ${item.accent}33` : 'none',
+                    minWidth: '260px',
+                    outline: 'none'
+                  }}
+                  className="cyber-glitch-text"
+                >
+                  {/* Scanner Sweep Line when active */}
+                  {isActive && (
+                    <div 
+                      style={{ 
+                        position: 'absolute', 
+                        inset: 0, 
+                        background: `linear-gradient(to right, transparent, ${item.accent}22, transparent)`,
+                        animation: 'slice-sweep 2s infinite',
+                        pointerEvents: 'none'
+                      }} 
+                    />
+                  )}
+                  {/* Corner indicator box */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '6px',
+                    left: '8px',
+                    width: '6px',
+                    height: '6px',
+                    backgroundColor: isActive ? item.accent : 'rgba(255,255,255,0.2)',
+                    transition: 'background-color 0.3s ease'
+                  }}></div>
+                  
+                  {key === 'leetcode' && `[01 // VS_LEETCODE]`}
+                  {key === 'codeforces' && `[02 // VS_CODEFORCES]`}
+                  {key === 'generic' && `[03 // VS_GENERIC]`}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Main Comparative Console Chassis */}
+          <div 
+            style={{
+              position: 'relative',
+              backgroundColor: '#020203',
+              border: '1px solid',
+              borderColor: comparisonData[activeCompareTab].accent,
+              boxShadow: `0 12px 40px rgba(0,0,0,0.9), 0 0 30px ${comparisonData[activeCompareTab].accent}1a`,
+              clipPath: 'polygon(0% 0%, 97% 0%, 100% 24px, 100% 100%, 3% 100%, 0% calc(100% - 24px))',
+              transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              boxSizing: 'border-box'
+            }}
+            className="grid grid-cols-1 md:grid-cols-2"
+          >
+            {/* Top design header bar */}
+            <div style={{ 
+              gridColumn: '1 / -1', 
+              borderBottom: '1px solid rgba(255,255,255,0.08)', 
+              padding: '12px 24px', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              backgroundColor: 'rgba(255,255,255,0.01)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              color: 'var(--text-muted)',
+              letterSpacing: '0.15em'
+            }}>
+              <span>DECISION_MATRIX // COGNITIVE_ANALYSIS</span>
+              <span style={{ color: comparisonData[activeCompareTab].accent, fontWeight: 'bold' }}>
+                STATUS: {comparisonData[activeCompareTab].statusText}
+              </span>
             </div>
 
-            {/* Card 2: VS Codeforces */}
-            <div style={{ position: 'relative' }}>
-              <div className="hazard-stripes-crimson" style={{ height: '4px', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 20 }}></div>
-              <CyberCard variant="danger" title="VS. CODEFORCES // COLD LEADERBOARDS" systemCode="COMP.CF_02" statusText="ACTIVE">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontFamily: 'var(--font-mono)', fontSize: '12px', marginTop: '8px' }}>
-                  <div style={{ borderLeft: '2px solid rgba(244,63,94,0.4)', paddingLeft: '8px', opacity: 0.65 }}>
-                    <span style={{ color: 'var(--accent-crimson)' }}>CODEFORCES:</span>
-                    <p style={{ fontSize: '11px', marginTop: '2px' }}>Text-based grids, delayed scoring tables, and zero visual or interactive feedback.</p>
+            {/* Left Column: Target Deficits (Red themed) */}
+            <div style={{
+              padding: '40px',
+              backgroundColor: 'rgba(244, 63, 94, 0.01)',
+              borderRight: '1px solid rgba(255,255,255,0.04)',
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px'
+            }}>
+              {/* Scanline sweep */}
+              <div className="scanner-beam-red" style={{ opacity: 0.05 }} />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '4px', height: '18px', backgroundColor: 'var(--accent-crimson)' }}></div>
+                <h3 className="font-display font-bold glow-crimson" style={{ fontSize: '16px', color: 'var(--accent-crimson)', letterSpacing: '0.1em' }}>
+                  {comparisonData[activeCompareTab].deficit.title}
+                </h3>
+              </div>
+
+              {/* Deficit metrics */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {comparisonData[activeCompareTab].deficit.metrics.map((m, idx) => (
+                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
+                      <span>{m.name}</span>
+                      <span style={{ color: 'var(--accent-crimson)' }}>{m.value}%</span>
+                    </div>
+                    {/* Progress track */}
+                    <div style={{ height: '4px', backgroundColor: '#100a0b', position: 'relative' }}>
+                      <div 
+                        style={{ 
+                          width: `${m.value}%`, 
+                          height: '100%', 
+                          backgroundColor: 'var(--accent-crimson)',
+                          boxShadow: '0 0 8px rgba(244, 63, 94, 0.5)'
+                        }}
+                        className="metric-bar-fill"
+                      />
+                    </div>
                   </div>
-                  <div style={{ borderLeft: '2px solid var(--accent-crimson)', paddingLeft: '8px' }}>
-                    <span style={{ color: 'var(--accent-crimson)' }}>ALGOCLASH:</span>
-                    <p style={{ fontSize: '11px', marginTop: '2px', color: 'var(--text-primary)' }}>Gaming-inspired spectator HUDs, live bracket sibling routing, double-elimination arenas, and instant spectator flow.</p>
+                ))}
+              </div>
+
+              {/* Deficit Logs */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px', borderTop: '1px solid rgba(244,63,94,0.1)', paddingTop: '20px' }}>
+                <span style={{ fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '0.2em' }}>DETECTOR_LOGS // STAGNANT</span>
+                {comparisonData[activeCompareTab].deficit.logs.map((log, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                    <span style={{ color: 'var(--accent-crimson)' }}>✗</span>
+                    <span>{log}</span>
                   </div>
-                </div>
-              </CyberCard>
+                ))}
+              </div>
             </div>
 
-            {/* Card 3: VS Generic Platforms */}
-            <div style={{ position: 'relative' }}>
-              <div className="hazard-stripes-sm" style={{ height: '4px', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 20 }}></div>
-              <CyberCard variant="warning" title="VS. GENERIC PLATFORMS // COPIED ELO" systemCode="COMP.GEN_03" statusText="ACTIVE">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontFamily: 'var(--font-mono)', fontSize: '12px', marginTop: '8px' }}>
-                  <div style={{ borderLeft: '2px solid rgba(244,63,94,0.4)', paddingLeft: '8px', opacity: 0.65 }}>
-                    <span style={{ color: 'var(--accent-crimson)' }}>GENERIC EXAMS:</span>
-                    <p style={{ fontSize: '11px', marginTop: '2px' }}>Vulnerable to tab switching, copy-pasted ChatGPT scripts, and external help.</p>
+            {/* Right Column: AlgoClash Advantage (Selected color themed) */}
+            <div style={{
+              padding: '40px',
+              backgroundColor: `${comparisonData[activeCompareTab].accent}03`,
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px'
+            }}>
+              {/* Scanline sweep */}
+              <div className={activeCompareTab === 'leetcode' ? 'scanner-beam' : activeCompareTab === 'codeforces' ? 'scanner-beam-red' : 'scanner-beam'} style={{ opacity: 0.05 }} />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '4px', height: '18px', backgroundColor: comparisonData[activeCompareTab].accent }}></div>
+                <h3 className="font-display font-bold" style={{ fontSize: '16px', color: comparisonData[activeCompareTab].accent, letterSpacing: '0.1em', textShadow: `0 0 10px ${comparisonData[activeCompareTab].accent}80` }}>
+                  {comparisonData[activeCompareTab].advantage.title}
+                </h3>
+              </div>
+
+              {/* Advantage metrics */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {comparisonData[activeCompareTab].advantage.metrics.map((m, idx) => (
+                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#fff', letterSpacing: '0.1em' }}>
+                      <span>{m.name}</span>
+                      <span style={{ color: comparisonData[activeCompareTab].accent, fontWeight: 'bold' }}>{m.value === 95 || m.value === 92 ? 'MAX' : `${m.value}%`}</span>
+                    </div>
+                    {/* Progress track */}
+                    <div style={{ height: '4px', backgroundColor: '#071518', position: 'relative' }}>
+                      <div 
+                        style={{ 
+                          width: `${m.value}%`, 
+                          height: '100%', 
+                          backgroundColor: comparisonData[activeCompareTab].accent,
+                          boxShadow: `0 0 8px ${comparisonData[activeCompareTab].accent}`
+                        }}
+                        className="metric-bar-fill"
+                      />
+                    </div>
                   </div>
-                  <div style={{ borderLeft: '2px solid var(--accent-yellow)', paddingLeft: '8px' }}>
-                    <span style={{ color: 'var(--accent-yellow)' }}>ALGOCLASH:</span>
-                    <p style={{ fontSize: '11px', marginTop: '2px', color: 'var(--text-primary)' }}>Mandated fullscreen tracking, intelligent keystroke delta split-analysis, and tamper-proof postgres proctoring logs.</p>
+                ))}
+              </div>
+
+              {/* Advantage Logs */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px', borderTop: `1px solid ${comparisonData[activeCompareTab].accent}22`, paddingTop: '20px' }}>
+                <span style={{ fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '0.2em' }}>ACTIVE_MATRIX // COMBAT_INTELLIGENCE</span>
+                {comparisonData[activeCompareTab].advantage.logs.map((log, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--text-primary)', lineHeight: '1.5' }}>
+                    <span style={{ color: comparisonData[activeCompareTab].accent }}>✓</span>
+                    <span>{log}</span>
                   </div>
-                </div>
-              </CyberCard>
+                ))}
+              </div>
             </div>
 
+            {/* Bottom traces decoration */}
+            <div style={{ 
+              gridColumn: '1 / -1', 
+              borderTop: '1px solid rgba(255,255,255,0.05)', 
+              padding: '12px 24px', 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              backgroundColor: 'rgba(0,0,0,0.3)',
+              fontSize: '9px',
+              fontFamily: 'var(--font-mono)',
+              color: 'var(--text-muted)'
+            }}>
+              <span>PARADIGM_SWAP: SUCCESS</span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} style={{ width: '4px', height: '6px', backgroundColor: comparisonData[activeCompareTab].accent, transform: 'skewX(-20deg)', opacity: 0.6 }} />
+                ))}
+              </div>
+            </div>
           </div>
 
         </div>

@@ -316,3 +316,81 @@ body {
   animation: fadeIn-anim 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Logo & Crest Shared Animations */
+@keyframes bounce-trophy-landing {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+.bounce-trophy-landing {
+  animation: bounce-trophy-landing 2.5s ease-in-out infinite;
+}
+
+@keyframes cursor-float-left {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.cursor-float-left {
+  animation: cursor-float-left 4s ease-in-out infinite;
+}
+
+@keyframes cursor-float-right {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+.cursor-float-right {
+  animation: cursor-float-right 4s ease-in-out infinite;
+}
+
+@keyframes cursor-flicker {
+  0%, 100% { opacity: 1; transform: translate(0, 0); }
+  5% { opacity: 0.85; transform: translate(-1px, 1px); }
+  10% { opacity: 1; transform: translate(0, 0); }
+  15% { opacity: 0.9; transform: translate(1px, -1px); }
+  25% { opacity: 1; transform: translate(0, 0); }
+  50% { opacity: 0.8; transform: translate(-2px, 0); }
+  55% { opacity: 1; transform: translate(0, 0); }
+  75% { opacity: 0.95; transform: translate(1px, 1px); }
+  80% { opacity: 1; transform: translate(0, 0); }
+}
+.cursor-flicker {
+  animation: cursor-flicker 2s infinite;
+}
+
+@keyframes cursor-flicker-crimson {
+  0%, 100% { opacity: 1; transform: translate(0, 0); }
+  8% { opacity: 0.8; transform: translate(1px, -1px); }
+  12% { opacity: 1; transform: translate(0, 0); }
+  20% { opacity: 0.9; transform: translate(-1px, 1px); }
+  30% { opacity: 1; transform: translate(0, 0); }
+  60% { opacity: 0.85; transform: translate(0, -2px); }
+  65% { opacity: 1; transform: translate(0, 0); }
+  70% { opacity: 0.9; transform: translate(-1px, -1px); }
+  75% { opacity: 1; transform: translate(0, 0); }
+}
+.cursor-flicker-crimson {
+  animation: cursor-flicker-crimson 2.2s infinite;
+}
+
+/* Tactical Comparison Console Helpers */
+.neon-glow-cyan {
+  box-shadow: 0 0 15px rgba(0, 242, 254, 0.25);
+  border-color: var(--accent-cyan);
+}
+.neon-glow-crimson {
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.25);
+  border-color: var(--accent-crimson);
+}
+.neon-glow-yellow {
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.25);
+  border-color: var(--accent-yellow);
+}
+
+.terminal-scroll-bg {
+  background: linear-gradient(0deg, rgba(2, 2, 3, 0.96) 0%, rgba(5, 5, 8, 0.92) 100%);
+}
+
+.metric-bar-fill {
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+
