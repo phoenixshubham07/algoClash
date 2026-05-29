@@ -315,9 +315,9 @@ export const ClashSplash = ({ onFinish }) => {
     flareRef.current = null;
 
     // Reset initial style states using gsap.set to avoid jumps
-    // Rotate left glove 70deg and right glove -70deg to make them point at each other
-    gsap.set(leftGloveRef.current, { xPercent: -100, yPercent: -50, x: "-45vw", y: "0px", scale: 2.2, rotation: 70, opacity: 0 });
-    gsap.set(rightGloveRef.current, { xPercent: 0, yPercent: -50, x: "45vw", y: "0px", scale: 2.2, rotation: -70, opacity: 0 });
+    // Rotate left glove 35deg and right glove -35deg to make them point at each other around center
+    gsap.set(leftGloveRef.current, { xPercent: -100, yPercent: -50, x: "-45vw", y: "0px", scale: 2.2, rotation: 35, opacity: 0 });
+    gsap.set(rightGloveRef.current, { xPercent: 0, yPercent: -50, x: "45vw", y: "0px", scale: 2.2, rotation: -35, opacity: 0 });
     gsap.set(leftCursorRef.current, { xPercent: -100, yPercent: -50, x: "-45vw", y: "0px", scale: 2.2, opacity: 0 });
     gsap.set(rightCursorRef.current, { xPercent: 0, yPercent: -50, x: "45vw", y: "0px", scale: 2.2, opacity: 0 });
 
@@ -336,8 +336,8 @@ export const ClashSplash = ({ onFinish }) => {
       setGloveForm('pointer');
     });
 
-    tl.to(leftGloveRef.current, { x: "25px", opacity: 1, duration: 0.32, ease: "power2.out" }, "+=0.1");
-    tl.to(rightGloveRef.current, { x: "-25px", opacity: 1, duration: 0.32, ease: "power2.out" }, "<");
+    tl.to(leftGloveRef.current, { x: "0px", opacity: 1, duration: 0.32, ease: "power2.out" }, "+=0.1");
+    tl.to(rightGloveRef.current, { x: "0px", opacity: 1, duration: 0.32, ease: "power2.out" }, "<");
 
     // Midway form swap (0.16s relative to start of approach)
     tl.call(() => {
@@ -539,10 +539,9 @@ export const ClashSplash = ({ onFinish }) => {
     left: '50%',
     top: '50%',
     transform: 'translate(-100%, -50%) translateX(-45vw) scale(2.2)',
-    transformOrigin: 'right top',
+    transformOrigin: 'center center',
     opacity: 0,
-    filter: phase === 'gloves_impact' ? 'drop-shadow(0 0 22px #ff6d00)' : 'drop-shadow(0 0 12px var(--accent-cyan))',
-    transition: 'filter 0.22s ease',
+    filter: 'drop-shadow(0 0 12px var(--accent-cyan))',
     pointerEvents: 'none'
   };
 
@@ -552,10 +551,9 @@ export const ClashSplash = ({ onFinish }) => {
     left: '50%',
     top: '50%',
     transform: 'translate(0%, -50%) translateX(45vw) scale(2.2)',
-    transformOrigin: 'left top',
+    transformOrigin: 'center center',
     opacity: 0,
-    filter: phase === 'gloves_impact' ? 'drop-shadow(0 0 22px #ff6d00)' : 'drop-shadow(0 0 12px var(--accent-crimson))',
-    transition: 'filter 0.22s ease',
+    filter: 'drop-shadow(0 0 12px var(--accent-crimson))',
     pointerEvents: 'none'
   };
 
@@ -567,8 +565,7 @@ export const ClashSplash = ({ onFinish }) => {
     transform: 'translate(-100%, -50%) translateX(-45vw) scale(2.2)',
     transformOrigin: 'right top',
     opacity: 0,
-    filter: phase === 'cursors_impact' ? 'drop-shadow(0 0 22px #ff6d00)' : 'drop-shadow(0 0 12px var(--accent-cyan))',
-    transition: 'filter 0.22s ease',
+    filter: 'drop-shadow(0 0 12px var(--accent-cyan))',
     pointerEvents: 'none'
   };
 
@@ -580,8 +577,7 @@ export const ClashSplash = ({ onFinish }) => {
     transform: 'translate(0%, -50%) translateX(45vw) scale(2.2)',
     transformOrigin: 'left top',
     opacity: 0,
-    filter: phase === 'cursors_impact' ? 'drop-shadow(0 0 22px #ff6d00)' : 'drop-shadow(0 0 12px var(--accent-crimson))',
-    transition: 'filter 0.22s ease',
+    filter: 'drop-shadow(0 0 12px var(--accent-crimson))',
     pointerEvents: 'none'
   };
 
