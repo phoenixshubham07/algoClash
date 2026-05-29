@@ -192,74 +192,82 @@ export const LandingPage = ({ onNavigateToArena }) => {
       >
 
 
-        {/* Trophy and Flanking Cursors in Hero Section */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '36px', position: 'relative' }}>
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'center', height: '110px', position: 'relative', marginBottom: '16px' }}>
-            {/* Left Cyan Cursor Enters Symmetrically and floats */}
-            <motion.div 
-              initial={{ x: -100, opacity: 0 }}
-              animate={{ 
-                x: 0, 
-                opacity: 1,
-                y: [0, -6, 0]
-              }}
-              transition={{ 
-                x: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
-                opacity: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
-                y: { repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.8 }
-              }}
-              style={{ transform: 'rotate(18deg)', transformOrigin: 'right top', filter: 'drop-shadow(0 0 8px var(--accent-cyan))', width: '36px', height: '51px' }}
-            >
-              {renderCursor('cyan', true)}
-            </motion.div>
-
-            {/* Trophy in the Center */}
+        {/* Trophy and Clashing Cursors in Hero Section */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '16px', position: 'relative' }}>
+            
+            {/* Trophy on top of the 2 cursors */}
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1.1, opacity: 1 }}
+              animate={{ scale: 1.0, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.2 }}
-              style={{ width: '112px', height: '104px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: '32px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              {renderTrophySVG(112)}
+              {renderTrophySVG(32)}
             </motion.div>
 
-            {/* Right Crimson Cursor Enters Symmetrically and floats */}
-            <motion.div 
-              initial={{ x: 100, opacity: 0 }}
-              animate={{ 
-                x: 0, 
-                opacity: 1,
-                y: [0, 6, 0]
-              }}
-              transition={{ 
-                x: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
-                opacity: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
-                y: { repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.8 }
-              }}
-              style={{ transform: 'rotate(-18deg)', transformOrigin: 'left top', filter: 'drop-shadow(0 0 8px var(--accent-crimson))', width: '36px', height: '51px' }}
-            >
-              {renderCursor('crimson', false)}
-            </motion.div>
+            {/* Symmetrical clashing cursors */}
+            <div style={{ display: 'flex', gap: '4px', height: '36px', width: '52px', position: 'relative' }}>
+              {/* Left Cyan Cursor */}
+              <motion.div 
+                initial={{ x: -60, opacity: 0 }}
+                animate={{ 
+                  x: 0, 
+                  opacity: 1,
+                  y: [0, -4, 0]
+                }}
+                transition={{ 
+                  x: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
+                  opacity: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
+                  y: { repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.8 }
+                }}
+                style={{ transform: 'rotate(18deg)', transformOrigin: 'right top', filter: 'drop-shadow(0 0 6px var(--accent-cyan))', width: '24px', height: '34px' }}
+              >
+                {renderCursor('cyan', true)}
+              </motion.div>
+
+              {/* Right Crimson Cursor */}
+              <motion.div 
+                initial={{ x: 60, opacity: 0 }}
+                animate={{ 
+                  x: 0, 
+                  opacity: 1,
+                  y: [0, 4, 0]
+                }}
+                transition={{ 
+                  x: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
+                  opacity: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
+                  y: { repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.8 }
+                }}
+                style={{ transform: 'rotate(-18deg)', transformOrigin: 'left top', filter: 'drop-shadow(0 0 6px var(--accent-crimson))', width: '24px', height: '34px' }}
+              >
+                {renderCursor('crimson', false)}
+              </motion.div>
+            </div>
+            
           </div>
         </div>
 
         {/* OFFICIAL STENCILED OPTION WORDMARK WITH EXPANSION ANIMATION */}
-        <div 
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            fontFamily: "'Space Grotesk', sans-serif", 
-            fontSize: 'clamp(44px, 8vw, 84px)', 
-            fontWeight: 900, 
-            color: '#fff', 
-            userSelect: 'none', 
-            position: 'relative',
-            padding: '24px 0',
-            marginBottom: '28px',
-            filter: 'drop-shadow(0 0 20px rgba(0,242,254,0.05))'
-          }}
-        >
+        <div style={{ position: 'relative', whiteSpace: 'nowrap', marginBottom: '28px' }}>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              fontFamily: "'Space Grotesk', sans-serif", 
+              fontSize: 'clamp(32px, 6.5vw, 68px)', 
+              fontWeight: 900, 
+              color: '#fff', 
+              userSelect: 'none', 
+              padding: '24px 0',
+              filter: 'drop-shadow(0 0 20px rgba(0,242,254,0.05))'
+            }}
+          >
           {/* Left Sleek Skewed Cyan Bracket - slide left */}
           <motion.span 
             initial={{ opacity: 0, x: 95, skewX: -18 }}
@@ -388,6 +396,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           >
             &gt;
           </motion.span>
+          </motion.div>
         </div>
 
         {/* Tagline */}
@@ -494,13 +503,13 @@ export const LandingPage = ({ onNavigateToArena }) => {
         </motion.div>
       </section>
 
-      {/* SECTION 2: WHAT MAKES US DIFFERENT (TECH MOAT & ANTI-CHEAT) */}
+      {/* SECTION 2: WHY WE ARE A DIFFERENT LEAGUE */}
       <section 
         id="tech-moat"
         style={{
           position: 'relative',
           zIndex: 10,
-          padding: '100px 5%',
+          padding: '120px 5%',
           backgroundColor: 'var(--bg-carbon)',
           borderTop: '1px solid rgba(255,255,255,0.03)',
           borderBottom: '1px solid rgba(255,255,255,0.03)'
@@ -508,148 +517,70 @@ export const LandingPage = ({ onNavigateToArena }) => {
       >
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '48px', alignItems: 'center' }}>
+          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+            <span style={{ fontSize: '9px', color: 'var(--accent-cyan)', letterSpacing: '0.3em', fontWeight: 'bold' }}>THE NEW STANDARD</span>
+            <h2 className="font-display font-bold glow-cyan" style={{ fontSize: 'clamp(32px, 5vw, 44px)', color: '#fff', textTransform: 'uppercase', marginTop: '6px' }}>
+              A DIFFERENT LEAGUE
+            </h2>
+            <div style={{ width: '80px', height: '2px', backgroundColor: 'var(--accent-cyan)', margin: '12px auto 0 auto' }}></div>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: '32px'
+          }}>
             
-            {/* Left: Anti-Cheat Telemetry Graphic */}
-            <motion.div 
-              initial={{ opacity: 0, x: -24 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6 }}
-              style={{ position: 'relative' }}
-            >
-              <div style={{ position: 'absolute', top: '-16px', left: '-16px', fontSize: '9px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)' }}>[PROCTORING_HUD_V1]</div>
-              <div style={{ position: 'absolute', bottom: '-16px', right: '-16px', fontSize: '9px', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>[SYS_CLEARANCE: HIGH]</div>
-              
-              {/* Stepped Chassis Frame Border */}
-              <div style={{
-                border: '1px solid #1c202d',
-                backgroundColor: 'rgba(5,6,8,0.95)',
-                padding: '28px',
-                position: 'relative',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.95)',
-                clipPath: 'polygon(0% 0%, 92% 0%, 100% 24px, 100% 100%, 8% 100%, 0% calc(100% - 24px))'
-              }}>
-                {/* Corner Accents */}
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '12px', height: '12px', borderTop: '2px solid var(--accent-yellow)', borderLeft: '2px solid var(--accent-yellow)' }}></div>
-                <div style={{ position: 'absolute', bottom: 0, right: 0, width: '12px', height: '12px', borderBottom: '2px solid var(--accent-cyan)', borderRight: '2px solid var(--accent-cyan)' }}></div>
-                
-                {/* Dotted Grid Background */}
-                <div className="bg-micro-dot" style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }}></div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', marginBottom: '20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div className="hazard-stripes-sm" style={{ width: '10px', height: '18px' }}></div>
-                    <span className="font-display" style={{ fontWeight: 'bold', letterSpacing: '0.15em', fontSize: '12px', color: 'var(--accent-yellow)' }}>
-                      SECURITY TIMELINE AUDIT
-                    </span>
+            {/* Card 1: VS LeetCode */}
+            <div style={{ position: 'relative' }}>
+              <div className="hazard-stripes-cyan" style={{ height: '4px', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 20 }}></div>
+              <CyberCard variant="primary" title="VS. LEETCODE // THE SOLITARY GRID" systemCode="COMP.LC_01" statusText="ACTIVE">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontFamily: 'var(--font-mono)', fontSize: '12px', marginTop: '8px' }}>
+                  <div style={{ borderLeft: '2px solid rgba(244,63,94,0.4)', paddingLeft: '8px', opacity: 0.65 }}>
+                    <span style={{ color: 'var(--accent-crimson)' }}>LEETCODE:</span>
+                    <p style={{ fontSize: '11px', marginTop: '2px' }}>Blind, solitary compilers. Memorizing standard questions and template solutions.</p>
                   </div>
-                  <span style={{ fontSize: '8px', color: 'var(--accent-crimson)', fontWeight: 'bold', border: '1px solid var(--accent-crimson)', padding: '1px 6px', borderRadius: '2px' }}>
-                    ACTIVE
-                  </span>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>
-                  <div style={{ borderLeft: '2px solid var(--accent-cyan)', paddingLeft: '10px' }}>
-                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 'bold' }}>19:02:11 // SYS_BOOT</span>
-                    <p style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>Anti-cheat sandbox layers successfully mounted.</p>
-                  </div>
-                  <div style={{ borderLeft: '2px solid var(--accent-yellow)', paddingLeft: '10px' }}>
-                    <span style={{ color: 'var(--accent-yellow)', fontWeight: 'bold' }}>19:04:47 // focus_lost</span>
-                    <p style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>Tab focus lost. Warning dispatched [1/2].</p>
-                  </div>
-                  <div style={{ borderLeft: '2px solid var(--accent-crimson)', paddingLeft: '10px' }}>
-                    <span style={{ color: 'var(--accent-crimson)', fontWeight: 'bold' }}>19:08:12 // paste_blocked</span>
-                    <p style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>ChatGPT pre-written block injection blocked.</p>
+                  <div style={{ borderLeft: '2px solid var(--accent-cyan)', paddingLeft: '8px' }}>
+                    <span style={{ color: 'var(--accent-cyan)' }}>ALGOCLASH:</span>
+                    <p style={{ fontSize: '11px', marginTop: '2px', color: 'var(--text-primary)' }}>1v1 digital combat. Real-time opponent cursor tracking, test case sway feedback, and mechanical pressure.</p>
                   </div>
                 </div>
+              </CyberCard>
+            </div>
 
-                <div style={{ marginTop: '20px', borderTop: '1px dashed rgba(255,255,255,0.06)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>S/N: 4275EV17EN</span>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    <div style={{ width: '8px', height: '4px', backgroundColor: 'var(--accent-cyan)' }}></div>
-                    <div style={{ width: '8px', height: '4px', backgroundColor: 'var(--accent-yellow)' }}></div>
-                    <div style={{ width: '8px', height: '4px', backgroundColor: 'var(--accent-crimson)' }}></div>
+            {/* Card 2: VS Codeforces */}
+            <div style={{ position: 'relative' }}>
+              <div className="hazard-stripes-crimson" style={{ height: '4px', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 20 }}></div>
+              <CyberCard variant="danger" title="VS. CODEFORCES // COLD LEADERBOARDS" systemCode="COMP.CF_02" statusText="ACTIVE">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontFamily: 'var(--font-mono)', fontSize: '12px', marginTop: '8px' }}>
+                  <div style={{ borderLeft: '2px solid rgba(244,63,94,0.4)', paddingLeft: '8px', opacity: 0.65 }}>
+                    <span style={{ color: 'var(--accent-crimson)' }}>CODEFORCES:</span>
+                    <p style={{ fontSize: '11px', marginTop: '2px' }}>Text-based grids, delayed scoring tables, and zero visual or interactive feedback.</p>
+                  </div>
+                  <div style={{ borderLeft: '2px solid var(--accent-crimson)', paddingLeft: '8px' }}>
+                    <span style={{ color: 'var(--accent-crimson)' }}>ALGOCLASH:</span>
+                    <p style={{ fontSize: '11px', marginTop: '2px', color: 'var(--text-primary)' }}>Gaming-inspired spectator HUDs, live bracket sibling routing, double-elimination arenas, and instant spectator flow.</p>
                   </div>
                 </div>
-              </div>
-            </motion.div>
+              </CyberCard>
+            </div>
 
-            {/* Right: Snappy Tactical Security Moat Features */}
-            <motion.div
-              initial={{ opacity: 0, x: 24 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6 }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '14px', color: 'var(--accent-cyan)' }}>⚡</span>
-                <span style={{ fontSize: '9px', color: 'var(--accent-cyan)', letterSpacing: '0.3em', fontWeight: 'bold' }}>TACTICAL PROCTORING</span>
-              </div>
-              
-              <h2 className="font-display font-bold glow-cyan" style={{ fontSize: 'clamp(32px, 5vw, 44px)', color: '#fff', textTransform: 'uppercase', marginBottom: '24px', letterSpacing: '0.05em' }}>
-                SECURITY MOAT
-              </h2>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* Layer 1 */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '120px 1fr',
-                  alignItems: 'center',
-                  padding: '16px',
-                  backgroundColor: 'rgba(255,255,255,0.01)',
-                  border: '1px solid rgba(255,255,255,0.04)',
-                  position: 'relative'
-                }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-cyan)', fontWeight: 'bold' }}>
-                    [ 01 // SCREEN ]
-                  </span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <h4 style={{ color: '#fff', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}>FULLSCREEN LIMIT</h4>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Mandated focus layer. Escaping fullscreen triggers instant warning points.</p>
+            {/* Card 3: VS Generic Platforms */}
+            <div style={{ position: 'relative' }}>
+              <div className="hazard-stripes-sm" style={{ height: '4px', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 20 }}></div>
+              <CyberCard variant="warning" title="VS. GENERIC PLATFORMS // COPIED ELO" systemCode="COMP.GEN_03" statusText="ACTIVE">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontFamily: 'var(--font-mono)', fontSize: '12px', marginTop: '8px' }}>
+                  <div style={{ borderLeft: '2px solid rgba(244,63,94,0.4)', paddingLeft: '8px', opacity: 0.65 }}>
+                    <span style={{ color: 'var(--accent-crimson)' }}>GENERIC EXAMS:</span>
+                    <p style={{ fontSize: '11px', marginTop: '2px' }}>Vulnerable to tab switching, copy-pasted ChatGPT scripts, and external help.</p>
+                  </div>
+                  <div style={{ borderLeft: '2px solid var(--accent-yellow)', paddingLeft: '8px' }}>
+                    <span style={{ color: 'var(--accent-yellow)' }}>ALGOCLASH:</span>
+                    <p style={{ fontSize: '11px', marginTop: '2px', color: 'var(--text-primary)' }}>Mandated fullscreen tracking, intelligent keystroke delta split-analysis, and tamper-proof postgres proctoring logs.</p>
                   </div>
                 </div>
-
-                {/* Layer 2 */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '120px 1fr',
-                  alignItems: 'center',
-                  padding: '16px',
-                  backgroundColor: 'rgba(255,255,255,0.01)',
-                  border: '1px solid rgba(255,255,255,0.04)',
-                  position: 'relative'
-                }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-yellow)', fontWeight: 'bold' }}>
-                    [ 02 // GUARD ]
-                  </span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <h4 style={{ color: '#fff', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}>INTELLIGENT PASTE DEFENSE</h4>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Keystroke delta split-analysis catches pre-written templates and external imports.</p>
-                  </div>
-                </div>
-
-                {/* Layer 3 */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '120px 1fr',
-                  alignItems: 'center',
-                  padding: '16px',
-                  backgroundColor: 'rgba(255,255,255,0.01)',
-                  border: '1px solid rgba(255,255,255,0.04)',
-                  position: 'relative'
-                }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-crimson)', fontWeight: 'bold' }}>
-                    [ 03 // AUDIT ]
-                  </span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <h4 style={{ color: '#fff', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}>TAMPER-PROOF LOGS</h4>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Encrypted postgres timeline visibility logs secure match results against disputes.</p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+              </CyberCard>
+            </div>
 
           </div>
 

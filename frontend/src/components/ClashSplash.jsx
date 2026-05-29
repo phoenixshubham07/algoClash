@@ -925,7 +925,7 @@ export const ClashSplash = ({ onFinish }) => {
               alignItems: 'center', 
               justifyContent: 'center', 
               fontFamily: "'Space Grotesk', sans-serif", 
-              fontSize: 'clamp(44px, 8vw, 84px)', 
+              fontSize: 'clamp(32px, 6.5vw, 68px)', 
               fontWeight: 900, 
               color: '#fff', 
               userSelect: 'none', 
