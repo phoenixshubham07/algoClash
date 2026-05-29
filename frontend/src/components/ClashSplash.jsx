@@ -3,9 +3,7 @@ import { motion } from 'framer-motion';
 import { CyberButton } from './CyberButton';
 
 export const ClashSplash = ({ onFinish }) => {
-  const [clashed, setClashed] = useState(false);
-  const [frameTrophy, setFrameTrophy] = useState(false);
-  const [showTrophy, setShowTrophy] = useState(false);
+  const [phase, setPhase] = useState('initial'); // 'initial' | 'gloves_approach' | 'gloves_impact' | 'gloves_retreat' | 'cursors_approach' | 'cursors_impact' | 'hero_morph'
   
   const canvasRef = useRef(null);
   const cursorContainerRef = useRef(null);
@@ -70,25 +68,38 @@ export const ClashSplash = ({ onFinish }) => {
     timeoutsRef.current = [];
   };
 
-  // Spark particle physics (highly metallic, lingering, quick-decaying sparks)
+  // Spark particle physics (highly metallic, lingering welding sparks with ballistic arcs)
   class Spark {
-    constructor(x, y, color) {
+    constructor(x, y) {
       this.x = x;
       this.y = y;
-      const angle = (Math.random() - 0.5) * Math.PI * 1.8;
-      const force = Math.random() * 12 + 6; // high initial velocity
       
-      this.vx = Math.cos(angle) * force * (Math.random() > 0.5 ? 1 : -1);
-      this.vy = Math.sin(angle) * force - 2;
-      this.size = Math.random() * 2.2 + 0.8;
-      this.color = color;
+      const angle = (Math.random() - 0.5) * Math.PI * 1.8;
+      const speed = Math.random() * 16 + 8; // high speed
+      
+      this.vx = Math.cos(angle) * speed * (Math.random() > 0.5 ? 1 : -1);
+      this.vy = Math.sin(angle) * speed - 4; // initial upward velocity
+      this.size = Math.random() * 2.5 + 1.2;
+      
+      // Welding spark colors: yellow, gold, orange, red-orange, white
+      const colors = ['#FFD700', '#FFA500', '#FF8C00', '#FF4500', '#FFFFFF'];
+      this.color = colors[Math.floor(Math.random() * colors.length)];
+      
       this.alpha = 1;
-      this.decay = Math.random() * 0.04 + 0.03; // burns out quickly
-      this.drag = 0.86; // high drag makes them decelerate and linger at clash point
-      this.gravity = 0.015; // very light gravity so they float/hover rather than falling like rain
+      this.decay = Math.random() * 0.035 + 0.02; // quick decay
+      this.drag = 0.96; // allow them to fly far
+      this.gravity = 0.28; // high gravity for beautiful arc
+      
+      this.history = [{ x: this.x, y: this.y }];
+      this.maxHistory = 6;
     }
 
     update() {
+      this.history.push({ x: this.x, y: this.y });
+      if (this.history.length > this.maxHistory) {
+        this.history.shift();
+      }
+      
       this.vx *= this.drag;
       this.vy *= this.drag;
       this.vy += this.gravity;
@@ -98,37 +109,22 @@ export const ClashSplash = ({ onFinish }) => {
     }
 
     draw(ctx) {
+      if (this.history.length < 2) return;
       ctx.save();
-      const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-      if (speed > 1.2) {
-        ctx.beginPath();
-        ctx.moveTo(this.x, this.y);
-        ctx.lineTo(this.x - this.vx * 1.4, this.y - this.vy * 1.4);
-        ctx.lineWidth = this.size * 3.2;
-        ctx.strokeStyle = this.color;
-        ctx.globalAlpha = this.alpha * 0.35;
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(this.x, this.y);
-        ctx.lineTo(this.x - this.vx * 1.4, this.y - this.vy * 1.4);
-        ctx.lineWidth = this.size;
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.globalAlpha = this.alpha;
-        ctx.stroke();
-      } else {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size * 2.2, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.globalAlpha = this.alpha * 0.35;
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.globalAlpha = this.alpha;
-        ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(this.history[0].x, this.history[0].y);
+      for (let i = 1; i < this.history.length; i++) {
+        ctx.lineTo(this.history[i].x, this.history[i].y);
       }
+      ctx.lineTo(this.x, this.y);
+      
+      ctx.lineWidth = this.size;
+      ctx.strokeStyle = this.color;
+      ctx.globalAlpha = this.alpha;
+      ctx.lineCap = 'round';
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = this.color;
+      ctx.stroke();
       ctx.restore();
     }
   }
@@ -193,6 +189,22 @@ export const ClashSplash = ({ onFinish }) => {
     }
   }
 
+  // Lock scrolling and hide mouse cursor on body initially
+  useEffect(() => {
+    const isHero = phase === 'hero_morph';
+    if (!isHero) {
+      document.body.classList.add('hide-custom-cursor');
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.classList.remove('hide-custom-cursor');
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.classList.remove('hide-custom-cursor');
+      document.body.style.overflow = 'unset';
+    };
+  }, [phase]);
+
   // Auto-run clashing intro on mount after brief initial buffer
   useEffect(() => {
     clearAllTimeouts();
@@ -250,63 +262,67 @@ export const ClashSplash = ({ onFinish }) => {
     };
   }, []);
 
+  const triggerSparks = (x, y) => {
+    const sps = [];
+    for (let i = 0; i < 40; i++) {
+      sps.push(new Spark(x, y));
+    }
+    particlesRef.current = sps;
+  };
+
   const triggerClash = () => {
-    setClashed(false);
-    setFrameTrophy(false);
-    setShowTrophy(false);
+    setPhase('initial');
     particlesRef.current = [];
     shockwaveRef.current = null;
     flareRef.current = null;
 
+    // 1. Gloves start approaching at 600ms
     addTimeout(() => {
-      setClashed(true);
+      setPhase('gloves_approach');
 
-      // Symmetrical clash impact trigger after approach velocity completes (320ms)
+      // 2. Gloves clash at 920ms (600ms + 320ms velocity)
       addTimeout(() => {
+        setPhase('gloves_impact');
+        
+        // Spawn sparks and shockwave
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
-
         flareRef.current = new Flare(centerX, centerY);
-
-        // Sparks
-        const sps = [];
-        for (let i = 0; i < 24; i++) {
-          const isCyan = i % 2 === 0;
-          const color = isCyan 
-            ? (Math.random() > 0.35 ? '#00f2fe' : '#FFFFFF')
-            : (Math.random() > 0.35 ? '#f43f5e' : '#ffd700');
-          sps.push(new Spark(centerX, centerY, color));
-        }
-        particlesRef.current = sps;
-
         shockwaveRef.current = new Shockwave(centerX, centerY);
+        triggerSparks(centerX, centerY);
 
-        // Frame the golden trophy in the center (50ms after clash impact)
+        // 3. Gloves retreat and fade out at 1320ms
         addTimeout(() => {
-          setFrameTrophy(true);
-        }, 50);
+          setPhase('gloves_retreat');
 
-        // Morph cursors to hero and reveal stenciled wordmark after 1800ms of trophy focus
-        addTimeout(() => {
-          setShowTrophy(true);
-        }, 1800);
+          // 4. Cursors start approaching at 1820ms
+          addTimeout(() => {
+            setPhase('cursors_approach');
 
-      }, velocity * 1000);
-    }, 45);
+            // 5. Cursors clash at 2220ms
+            addTimeout(() => {
+              setPhase('cursors_impact');
+              
+              // Spawn sparks and shockwave again!
+              flareRef.current = new Flare(centerX, centerY);
+              shockwaveRef.current = new Shockwave(centerX, centerY);
+              triggerSparks(centerX, centerY);
+
+              // 6. Morph to hero and unlock viewport at 2720ms
+              addTimeout(() => {
+                setPhase('hero_morph');
+              }, 500);
+
+            }, 400);
+          }, 500);
+        }, 400);
+      }, 320);
+    }, 600);
   };
 
   const handleReplay = () => {
     clearAllTimeouts();
-    setClashed(false);
-    setFrameTrophy(false);
-    setShowTrophy(false);
-    particlesRef.current = [];
-    shockwaveRef.current = null;
-    flareRef.current = null;
-
-    addTimeout(() => {
-      triggerClash();
-    }, 600);
+    triggerClash();
   };
 
   const renderTrophySVG = (size = 112) => {
@@ -330,6 +346,68 @@ export const ClashSplash = ({ onFinish }) => {
             return <rect key={`t-${rIdx}-${cIdx}`} x={cIdx} y={rIdx} width="1.05" height="1.05" fill={fill} />;
           })
         )}
+      </svg>
+    );
+  };
+
+  const renderGlove = (type = 'cyan', mirrored = false) => {
+    // 12 columns x 14 rows retro boxing glove
+    const gloveGrid = [
+      [0,0,0,1,1,1,1,1,0,0,0,0],
+      [0,0,1,2,2,2,2,2,1,0,0,0],
+      [0,1,2,2,2,2,2,2,2,1,0,0],
+      [0,1,2,3,2,2,2,2,2,1,0,0],
+      [1,2,2,3,2,2,2,2,2,2,1,0],
+      [1,2,2,2,2,2,2,2,2,2,1,0],
+      [1,2,2,2,2,2,2,1,1,1,1,0],
+      [1,2,2,2,2,2,1,2,2,2,1,0],
+      [0,1,2,2,2,1,2,3,2,1,0,0],
+      [0,0,1,2,2,1,2,2,1,0,0,0],
+      [0,0,0,1,1,1,1,1,1,0,0,0],
+      [0,0,0,0,1,4,4,4,1,0,0,0],
+      [0,0,0,0,1,4,4,4,1,0,0,0],
+      [0,0,0,0,0,1,1,1,0,0,0,0]
+    ];
+
+    return (
+      <svg 
+        style={{ width: '100%', height: '100%' }}
+        viewBox="0 0 12 14" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {gloveGrid.map((row, rIdx) => {
+          const currentRow = mirrored ? [...row].reverse() : row;
+          return currentRow.map((cell, cIdx) => {
+            if (cell === 0) return null;
+            
+            let fill = "#00f2fe"; 
+            if (type === 'cyan') {
+              if (cell === 1) fill = "#083344"; // Dark outline
+              if (cell === 2) fill = "#00f2fe"; // Cyan body
+              if (cell === 3) fill = "#FFFFFF"; // White highlight
+              if (cell === 4) fill = "#38bdf8"; // Cuff cyan
+            } else {
+              if (cell === 1) fill = "#450a0a"; // Dark outline
+              if (cell === 2) fill = "#f43f5e"; // Crimson body
+              if (cell === 3) fill = "#FFFFFF"; // White highlight
+              if (cell === 4) fill = "#fb7185"; // Cuff crimson
+            }
+
+            return (
+              <rect 
+                key={`pixel-glove-${type}-${rIdx}-${cIdx}`} 
+                x={cIdx} 
+                y={rIdx} 
+                width="1" 
+                height="1" 
+                fill={fill} 
+                stroke={fill}
+                strokeWidth="0.05"
+              />
+            );
+          });
+        })}
       </svg>
     );
   };
@@ -376,67 +454,115 @@ export const ClashSplash = ({ onFinish }) => {
     );
   };
 
-  let leftLeft = '5%';
-  let leftTop = '50%';
-  let leftTransform = 'translate(-100%, -50%) scale(2.2)';
-
-  if (clashed) {
-    if (showTrophy) {
-      leftLeft = 'calc(50% - 4px)';
-      leftTop = 'calc(50% - 92px)';
-      leftTransform = 'translate(-100%, -50%) scale(1.0)';
-    } else if (frameTrophy) {
-      leftLeft = 'calc(50% - 70px)';
-      leftTop = '50%';
-      leftTransform = 'translate(-100%, -50%) scale(2.2)';
-    } else {
-      leftLeft = '50%';
-      leftTop = '50%';
-      leftTransform = 'translate(-100%, -50%) scale(2.2)';
-    }
+  // Glove coordinates and styles based on phase
+  let leftGloveLeft = '5%';
+  let leftGloveOpacity = 0;
+  if (phase === 'gloves_approach' || phase === 'gloves_impact') {
+    leftGloveLeft = '50%';
+    leftGloveOpacity = 1;
+  } else if (phase === 'gloves_retreat') {
+    leftGloveLeft = '5%';
+    leftGloveOpacity = 0;
   }
 
-  const leftStyle = {
+  const leftGloveStyle = {
     position: 'absolute',
     zIndex: 20,
-    left: leftLeft,
-    top: leftTop,
-    transform: leftTransform,
+    left: leftGloveLeft,
+    top: '50%',
+    transform: 'translate(-100%, -50%) scale(2.2)',
     transformOrigin: 'right top',
-    transition: 'left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), top 0.5s cubic-bezier(0.19, 1, 0.22, 1), transform 0.5s cubic-bezier(0.19, 1, 0.22, 1)',
+    opacity: leftGloveOpacity,
+    transition: 'left 0.32s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.32s ease',
+    filter: 'drop-shadow(0 0 12px var(--accent-cyan))',
+    pointerEvents: 'none'
+  };
+
+  let rightGloveLeft = '95%';
+  let rightGloveOpacity = 0;
+  if (phase === 'gloves_approach' || phase === 'gloves_impact') {
+    rightGloveLeft = '50%';
+    rightGloveOpacity = 1;
+  } else if (phase === 'gloves_retreat') {
+    rightGloveLeft = '95%';
+    rightGloveOpacity = 0;
+  }
+
+  const rightGloveStyle = {
+    position: 'absolute',
+    zIndex: 20,
+    left: rightGloveLeft,
+    top: '50%',
+    transform: 'translate(0%, -50%) scale(2.2)',
+    transformOrigin: 'left top',
+    opacity: rightGloveOpacity,
+    transition: 'left 0.32s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.32s ease',
+    filter: 'drop-shadow(0 0 12px var(--accent-crimson))',
+    pointerEvents: 'none'
+  };
+
+  // Cursor coordinates and styles based on phase
+  let leftCursorLeft = '5%';
+  let leftCursorTop = '50%';
+  let leftCursorTransform = 'translate(-100%, -50%) scale(2.2)';
+  let leftCursorOpacity = 0;
+
+  if (phase === 'cursors_approach') {
+    leftCursorLeft = '50%';
+    leftCursorOpacity = 1;
+  } else if (phase === 'cursors_impact') {
+    leftCursorLeft = '50%';
+    leftCursorOpacity = 1;
+  } else if (phase === 'hero_morph') {
+    leftCursorLeft = 'calc(50% - 4px)';
+    leftCursorTop = 'calc(50% - 92px)';
+    leftCursorTransform = 'translate(-100%, -50%) scale(1.0)';
+    leftCursorOpacity = 1;
+  }
+
+  const leftCursorStyle = {
+    position: 'absolute',
+    zIndex: 20,
+    left: leftCursorLeft,
+    top: leftCursorTop,
+    transform: leftCursorTransform,
+    transformOrigin: 'right top',
+    opacity: leftCursorOpacity,
+    transition: 'left 0.35s cubic-bezier(0.25, 1, 0.5, 1), top 0.5s cubic-bezier(0.19, 1, 0.22, 1), transform 0.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease',
     filter: 'drop-shadow(0 0 12px var(--accent-cyan))'
   };
 
-  let rightLeft = '95%';
-  let rightTop = '50%';
-  let rightTransform = 'translate(0%, -50%) scale(2.2)';
+  let rightCursorLeft = '95%';
+  let rightCursorTop = '50%';
+  let rightCursorTransform = 'translate(0%, -50%) scale(2.2)';
+  let rightCursorOpacity = 0;
 
-  if (clashed) {
-    if (showTrophy) {
-      rightLeft = 'calc(50% + 4px)';
-      rightTop = 'calc(50% - 92px)';
-      rightTransform = 'translate(0%, -50%) scale(1.0)';
-    } else if (frameTrophy) {
-      rightLeft = 'calc(50% + 70px)';
-      rightTop = '50%';
-      rightTransform = 'translate(0%, -50%) scale(2.2)';
-    } else {
-      rightLeft = '50%';
-      rightTop = '50%';
-      rightTransform = 'translate(0%, -50%) scale(2.2)';
-    }
+  if (phase === 'cursors_approach') {
+    rightCursorLeft = '50%';
+    rightCursorOpacity = 1;
+  } else if (phase === 'cursors_impact') {
+    rightCursorLeft = '50%';
+    rightCursorOpacity = 1;
+  } else if (phase === 'hero_morph') {
+    rightCursorLeft = 'calc(50% + 4px)';
+    rightCursorTop = 'calc(50% - 92px)';
+    rightCursorTransform = 'translate(0%, -50%) scale(1.0)';
+    rightCursorOpacity = 1;
   }
 
-  const rightStyle = {
+  const rightCursorStyle = {
     position: 'absolute',
     zIndex: 20,
-    left: rightLeft,
-    top: rightTop,
-    transform: rightTransform,
+    left: rightCursorLeft,
+    top: rightCursorTop,
+    transform: rightCursorTransform,
     transformOrigin: 'left top',
-    transition: 'left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), top 0.5s cubic-bezier(0.19, 1, 0.22, 1), transform 0.5s cubic-bezier(0.19, 1, 0.22, 1)',
+    opacity: rightCursorOpacity,
+    transition: 'left 0.35s cubic-bezier(0.25, 1, 0.5, 1), top 0.5s cubic-bezier(0.19, 1, 0.22, 1), transform 0.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease',
     filter: 'drop-shadow(0 0 12px var(--accent-crimson))'
   };
+
+  const showTrophy = phase === 'hero_morph';
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'none', fontFamily: 'var(--font-mono)' }}>
@@ -531,14 +657,31 @@ export const ClashSplash = ({ onFinish }) => {
           flex: 1
         }}
       >
+        {/* Left Cyan Glove Container */}
+        <div style={leftGloveStyle}>
+          <div style={{ animation: phase === 'gloves_approach' ? 'cursor-float-left 4s ease-in-out infinite' : 'none' }}>
+            <div style={{ width: '51px', height: '59px' }}>
+              {renderGlove('cyan', true)}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Crimson Glove Container */}
+        <div style={rightGloveStyle}>
+          <div style={{ animation: phase === 'gloves_approach' ? 'cursor-float-right 4s ease-in-out infinite' : 'none' }}>
+            <div style={{ width: '51px', height: '59px' }}>
+              {renderGlove('red', false)}
+            </div>
+          </div>
+        </div>
+
         {/* Left Cyan Cursor Container */}
-        <div style={leftStyle}>
-          <div style={{ animation: clashed ? 'none' : 'cursor-float-left 4s ease-in-out infinite' }}>
+        <div style={leftCursorStyle}>
+          <div style={{ animation: phase === 'cursors_approach' ? 'cursor-float-left 4s ease-in-out infinite' : 'none' }}>
             <div 
               style={{
-                transform: clashed ? `rotate(${clashAngle}deg)` : `rotate(12deg)`,
+                transform: `rotate(${clashAngle}deg)`,
                 transformOrigin: 'right top',
-                transition: 'transform 0.32s ease',
                 width: '36px', height: '51px'
               }}
             >
@@ -550,13 +693,12 @@ export const ClashSplash = ({ onFinish }) => {
         </div>
 
         {/* Right Crimson Cursor Container */}
-        <div style={rightStyle}>
-          <div style={{ animation: clashed ? 'none' : 'cursor-float-right 4s ease-in-out infinite' }}>
+        <div style={rightCursorStyle}>
+          <div style={{ animation: phase === 'cursors_approach' ? 'cursor-float-right 4s ease-in-out infinite' : 'none' }}>
             <div 
               style={{
-                transform: clashed ? `rotate(${-clashAngle}deg)` : `rotate(-12deg)`,
+                transform: `rotate(${-clashAngle}deg)`,
                 transformOrigin: 'left top',
-                transition: 'transform 0.32s ease',
                 width: '36px', height: '51px'
               }}
             >
@@ -746,27 +888,6 @@ export const ClashSplash = ({ onFinish }) => {
           </motion.div>
         </div>
 
-        {/* 8-Bit Gold Trophy (appears at center on impact, fades on morph) */}
-        <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 18, pointerEvents: 'none' }}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={
-              showTrophy 
-                ? { opacity: 0, scale: 0 } 
-                : (frameTrophy ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 })
-            }
-            transition={{ 
-              type: 'spring', 
-              stiffness: 140, 
-              damping: 10,
-              opacity: { duration: 0.2 }
-            }}
-            className={frameTrophy && !showTrophy ? 'bounce-trophy' : ''}
-          >
-            {renderTrophySVG(112)}
-          </motion.div>
-        </div>
-
         {/* Action Buttons (Initially hidden, fade in below tagline) */}
         <div style={{ position: 'absolute', left: '50%', top: 'calc(50% + 154px)', transform: 'translateX(-50%)', zIndex: 10 }}>
           <motion.div 
@@ -827,6 +948,15 @@ export const ClashSplash = ({ onFinish }) => {
 
       {/* Styling specific override inside component scope */}
       <style>{`
+        body.hide-custom-cursor {
+          cursor: none !important;
+        }
+        body.hide-custom-cursor * {
+          cursor: none !important;
+        }
+        body.hide-custom-cursor [style*="z-index: 100000"] {
+          display: none !important;
+        }
         :root {
           --accent-cyan: #00f2fe;
           --accent-crimson: #f43f5e;
