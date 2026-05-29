@@ -6,7 +6,7 @@ import { CyberButton } from './CyberButton';
 
 
 export const ClashSplash = ({ onFinish }) => {
-  const [phase, setPhase] = useState('initial'); // 'initial' | 'gloves_approach' | 'gloves_impact' | 'gloves_retreat' | 'cursors_approach' | 'cursors_impact' | 'hero_morph'
+  const [phase, setPhase] = useState('initial'); // 'initial' | 'gloves_approach' | 'gloves_impact' | 'gloves_retreat' | 'cursors_approach' | 'cursors_impact' | 'conquer_reveal' | 'hero_morph'
   const [gloveForm, setGloveForm] = useState('pointer'); // 'pointer' | 'fist'
   
   const phaseRef = useRef(phase);
@@ -20,6 +20,12 @@ export const ClashSplash = ({ onFinish }) => {
   const leftCursorRef = useRef(null);
   const rightCursorRef = useRef(null);
   const timelineRef = useRef(null);
+
+  const trophyRef = useRef(null);
+  const blackOverlayRef = useRef(null);
+  const codeTextRef = useRef(null);
+  const clashTextRef = useRef(null);
+  const conquerTextRef = useRef(null);
 
   const particlesRef = useRef([]);
   const flareRef = useRef(null);
@@ -321,6 +327,13 @@ export const ClashSplash = ({ onFinish }) => {
     gsap.set(leftCursorRef.current, { xPercent: -100, yPercent: -50, x: "-45vw", y: "0px", scale: 2.2, opacity: 0 });
     gsap.set(rightCursorRef.current, { xPercent: 0, yPercent: -50, x: "45vw", y: "0px", scale: 2.2, opacity: 0 });
 
+    // Reset trophy and text overlays
+    gsap.set(trophyRef.current, { x: "0px", y: "0px", scale: 0, opacity: 0 });
+    gsap.set(blackOverlayRef.current, { opacity: 0 });
+    gsap.set(codeTextRef.current, { scale: 0.6, opacity: 0 });
+    gsap.set(clashTextRef.current, { scale: 0.6, opacity: 0 });
+    gsap.set(conquerTextRef.current, { scale: 0.6, opacity: 0 });
+
     const tl = gsap.timeline({
       delay: 0.6,
       onComplete: () => {
@@ -353,6 +366,9 @@ export const ClashSplash = ({ onFinish }) => {
       triggerSparks(centerX, centerY);
     });
 
+    // CODE text flies in / pops in
+    tl.to(codeTextRef.current, { opacity: 1, scale: 1.1, duration: 0.15, ease: "back.out(2)" });
+
     // Animate friction grind (slides vertically by 15px over 0.5 seconds)
     tl.to(leftGloveRef.current, { y: "-=15px", duration: 0.5, ease: "power1.inOut" });
     tl.to(rightGloveRef.current, { y: "+=15px", duration: 0.5, ease: "power1.inOut" }, "<");
@@ -361,7 +377,10 @@ export const ClashSplash = ({ onFinish }) => {
     tl.call(() => {
       setPhase('gloves_retreat');
     });
-    tl.to(leftGloveRef.current, { x: "-45vw", opacity: 0, duration: 0.32, ease: "power2.in" });
+    
+    // CODE text fades out as they retreat
+    tl.to(codeTextRef.current, { opacity: 0, scale: 1.4, duration: 0.25, ease: "power2.in" });
+    tl.to(leftGloveRef.current, { x: "-45vw", opacity: 0, duration: 0.32, ease: "power2.in" }, "<");
     tl.to(rightGloveRef.current, { x: "45vw", opacity: 0, duration: 0.32, ease: "power2.in" }, "<");
 
     // --- 4. CURSORS APPROACH ---
@@ -380,13 +399,42 @@ export const ClashSplash = ({ onFinish }) => {
       triggerSparks(centerX, centerY);
     });
 
+    // CLASH text flies in / pops in
+    tl.to(clashTextRef.current, { opacity: 1, scale: 1.1, duration: 0.15, ease: "back.out(2)" });
+
     // Animate friction grind
     tl.to(leftCursorRef.current, { y: "-=15px", duration: 0.5, ease: "power1.inOut" });
     tl.to(rightCursorRef.current, { y: "+=15px", duration: 0.5, ease: "power1.inOut" }, "<");
 
-    // --- 6. HERO MORPH ---
-    tl.to(leftCursorRef.current, { x: "-4px", y: "-92px", scale: 1.0, duration: 0.6, ease: "power3.out" });
-    tl.to(rightCursorRef.current, { x: "4px", y: "-92px", scale: 1.0, duration: 0.6, ease: "power3.out" }, "<");
+    // --- 6. CONQUER REVEAL (SCREEN GOES DARK & TROPHY APPEARS) ---
+    tl.call(() => {
+      setPhase('conquer_reveal');
+    });
+    
+    // Fade out CLASH text and cursors
+    tl.to(clashTextRef.current, { opacity: 0, scale: 1.4, duration: 0.25, ease: "power2.in" });
+    tl.to(leftCursorRef.current, { opacity: 0, duration: 0.25 }, "<");
+    tl.to(rightCursorRef.current, { opacity: 0, duration: 0.25 }, "<");
+    
+    // Go dark
+    tl.to(blackOverlayRef.current, { opacity: 1, duration: 0.35 }, "<");
+    
+    // Reveal trophy & CONQUER text
+    tl.to(trophyRef.current, { scale: 2.2, opacity: 1, duration: 0.6, ease: "back.out(1.5)" });
+    tl.to(conquerTextRef.current, { scale: 1.0, opacity: 1, duration: 0.6, ease: "back.out(1.5)" }, "<");
+    
+    // Hold reveal for 1.2s to make it impactful
+    tl.to({}, { duration: 1.2 });
+
+    // --- 7. HERO MORPH ---
+    // Fade out black overlay and CONQUER text
+    tl.to(blackOverlayRef.current, { opacity: 0, duration: 0.5 });
+    tl.to(conquerTextRef.current, { opacity: 0, scale: 0.8, duration: 0.4 }, "<");
+    
+    // Cursors fade back in and flank the trophy while it scales down and rises
+    tl.to(trophyRef.current, { x: "0px", y: "-92px", scale: 1.0, duration: 0.6, ease: "power3.out" }, "<");
+    tl.to(leftCursorRef.current, { x: "-54px", y: "-92px", scale: 1.0, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
+    tl.to(rightCursorRef.current, { x: "54px", y: "-92px", scale: 1.0, opacity: 1, duration: 0.6, ease: "power3.out" }, "<");
   };
 
   const handleReplay = () => {
@@ -436,21 +484,7 @@ export const ClashSplash = ({ onFinish }) => {
             if (cell === 0) return null;
             
             let fill = "#FFFFFF"; 
-            const isColliding = phase === 'gloves_impact';
-            let isContactSurface = false;
-            if (isColliding) {
-              if (gloveForm === 'pointer') {
-                isContactSurface = rIdx < 6;
-              } else {
-                isContactSurface = mirrored ? cIdx > 12 : cIdx < 7;
-              }
-            }
-            
-            if (isContactSurface) {
-              if (cell === 1) fill = "#3e1200"; // Burnt outline
-              if (cell === 2) fill = "#ff3d00"; // Glowing red-orange
-              if (cell === 3) fill = "#ffa726"; // Heated body orange
-            } else if (type === 'cyan') {
+            if (type === 'cyan') {
               if (cell === 1) fill = "#083344"; // Dark outline
               if (cell === 2) fill = "#00f2fe"; // Cyan accent
               if (cell === 3) fill = "#FFFFFF"; // White body
@@ -493,17 +527,7 @@ export const ClashSplash = ({ onFinish }) => {
             if (cell === 0) return null;
             
             let fill = "#00f2fe"; 
-            const isColliding = phase === 'cursors_impact';
-            let isContactSurface = false;
-            if (isColliding) {
-              isContactSurface = rIdx < 5 && (mirrored ? cIdx > 6 : cIdx < 5);
-            }
-            
-            if (isContactSurface) {
-              if (cell === 1) fill = "#3e1200"; // Burnt outline
-              if (cell === 2) fill = "#ff3d00"; // Glowing red-orange
-              if (cell === 3) fill = "#ffa726"; // Heated body orange
-            } else if (type === 'cyan') {
+            if (type === 'cyan') {
               if (cell === 1) fill = "#083344";
               if (cell === 2) fill = "#00f2fe";
               if (cell === 3) fill = "#FFFFFF";
@@ -541,7 +565,10 @@ export const ClashSplash = ({ onFinish }) => {
     transform: 'translate(-100%, -50%) translateX(-45vw) scale(2.2)',
     transformOrigin: 'center center',
     opacity: 0,
-    filter: 'drop-shadow(0 0 12px var(--accent-cyan))',
+    filter: phase === 'gloves_impact'
+      ? 'drop-shadow(0 0 20px var(--accent-yellow)) drop-shadow(0 0 8px #ff7300)'
+      : 'drop-shadow(0 0 12px var(--accent-cyan))',
+    transition: 'filter 0.25s ease-out',
     pointerEvents: 'none'
   };
 
@@ -553,7 +580,10 @@ export const ClashSplash = ({ onFinish }) => {
     transform: 'translate(0%, -50%) translateX(45vw) scale(2.2)',
     transformOrigin: 'center center',
     opacity: 0,
-    filter: 'drop-shadow(0 0 12px var(--accent-crimson))',
+    filter: phase === 'gloves_impact'
+      ? 'drop-shadow(0 0 20px var(--accent-yellow)) drop-shadow(0 0 8px #ff7300)'
+      : 'drop-shadow(0 0 12px var(--accent-crimson))',
+    transition: 'filter 0.25s ease-out',
     pointerEvents: 'none'
   };
 
@@ -565,7 +595,10 @@ export const ClashSplash = ({ onFinish }) => {
     transform: 'translate(-100%, -50%) translateX(-45vw) scale(2.2)',
     transformOrigin: 'right top',
     opacity: 0,
-    filter: 'drop-shadow(0 0 12px var(--accent-cyan))',
+    filter: phase === 'cursors_impact'
+      ? 'drop-shadow(0 0 20px var(--accent-yellow)) drop-shadow(0 0 8px #ff7300)'
+      : 'drop-shadow(0 0 12px var(--accent-cyan))',
+    transition: 'filter 0.25s ease-out',
     pointerEvents: 'none'
   };
 
@@ -577,7 +610,10 @@ export const ClashSplash = ({ onFinish }) => {
     transform: 'translate(0%, -50%) translateX(45vw) scale(2.2)',
     transformOrigin: 'left top',
     opacity: 0,
-    filter: 'drop-shadow(0 0 12px var(--accent-crimson))',
+    filter: phase === 'cursors_impact'
+      ? 'drop-shadow(0 0 20px var(--accent-yellow)) drop-shadow(0 0 8px #ff7300)'
+      : 'drop-shadow(0 0 12px var(--accent-crimson))',
+    transition: 'filter 0.25s ease-out',
     pointerEvents: 'none'
   };
 
@@ -730,25 +766,108 @@ export const ClashSplash = ({ onFinish }) => {
           </div>
         </div>
 
-        {/* Subtitle 來未 (Initially hidden, fades in with hero above the wordmark) */}
-        <div style={{ position: 'absolute', left: '50%', top: 'calc(50% - 64px)', transform: 'translateX(-50%)', zIndex: 14, whiteSpace: 'nowrap' }}>
-          <motion.h2 
-            initial={{ opacity: 0, y: -8 }}
-            animate={showTrophy ? { opacity: 0.8, y: 0 } : { opacity: 0, y: -8 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="font-display" 
-            style={{ 
-              fontSize: '10px', 
-              letterSpacing: '0.45em', 
-              fontWeight: 'bold', 
-              color: 'var(--accent-yellow)', 
-              textTransform: 'uppercase', 
-              textShadow: '0 0 8px rgba(255,215,0,0.25)',
-              margin: 0
-            }}
-          >
-            來未 // FUTURE DIGITAL DUELS
-          </motion.h2>
+        {/* Black Screen Overlay for Conquer Reveal */}
+        <div 
+          ref={blackOverlayRef} 
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: '#000000',
+            zIndex: 12,
+            opacity: 0,
+            pointerEvents: 'none'
+          }}
+        />
+
+        {/* Trophy container */}
+        <div 
+          ref={trophyRef} 
+          style={{
+            position: 'absolute',
+            zIndex: 18,
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%) scale(0)',
+            width: '112px',
+            height: '104px',
+            opacity: 0,
+            pointerEvents: 'none'
+          }}
+        >
+          {renderTrophySVG(112)}
+        </div>
+
+        {/* CODE overlay */}
+        <div 
+          ref={codeTextRef} 
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: 'calc(50% + 90px)',
+            transform: 'translate(-50%, -50%) skewX(-18deg) scale(0.6)',
+            zIndex: 15,
+            pointerEvents: 'none',
+            color: 'var(--accent-cyan)',
+            filter: 'drop-shadow(0 0 16px rgba(0, 242, 254, 0.6))',
+            opacity: 0
+          }}
+        >
+          <svg style={{ height: '70px', width: 'auto', display: 'block' }} viewBox="0 0 174 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 0 8 L 8 0 L 36 0 L 36 10 L 12 10 L 12 36 L 36 36 L 36 46 L 8 46 L 0 38 Z" fill="currentColor" />
+            <path d="M 46 8 L 54 0 L 74 0 L 82 8 L 82 38 L 74 46 L 54 46 L 46 38 Z M 58 10 L 70 10 L 70 36 L 58 36 Z" fill="currentColor" fillRule="evenodd" />
+            <path d="M 92 0 L 120 0 L 128 8 L 128 38 L 120 46 L 92 46 Z M 104 10 L 116 10 L 116 36 L 104 36 Z" fill="currentColor" fillRule="evenodd" />
+            <path d="M 138 0 L 174 0 L 174 10 L 150 10 L 150 18 L 168 18 L 168 28 L 150 28 L 150 36 L 174 36 L 174 46 L 138 46 Z" fill="currentColor" />
+          </svg>
+        </div>
+
+        {/* CLASH overlay */}
+        <div 
+          ref={clashTextRef} 
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: 'calc(50% + 90px)',
+            transform: 'translate(-50%, -50%) skewX(-18deg) scale(0.6)',
+            zIndex: 15,
+            pointerEvents: 'none',
+            color: 'var(--accent-crimson)',
+            filter: 'drop-shadow(0 0 16px rgba(244, 63, 94, 0.7))',
+            opacity: 0
+          }}
+        >
+          <svg style={{ height: '70px', width: 'auto', display: 'block' }} viewBox="0 0 224 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 0 8 L 8 0 L 36 0 L 36 10 L 12 10 L 12 36 L 36 36 L 36 46 L 8 46 L 0 38 Z" fill="currentColor" />
+            <path d="M 46 0 L 58 0 L 58 36 L 82 36 L 82 46 L 46 46 Z" fill="currentColor" />
+            <path d="M 92 46 L 92 8 L 100 0 L 120 0 L 128 8 L 128 46 L 116 46 L 116 30 L 104 30 L 104 46 Z M 104 20 L 116 20 L 116 10 L 104 10 Z" fill="currentColor" fillRule="evenodd" />
+            <path d="M 138 8 L 146 0 L 174 0 L 174 10 L 150 10 L 150 18 L 166 18 L 174 26 L 174 38 L 166 46 L 138 46 L 138 36 L 162 36 L 162 28 L 146 28 L 138 20 Z" fill="currentColor" />
+            <path d="M 184 0 L 196 0 L 196 18 L 212 18 L 212 0 L 224 0 L 224 46 L 212 46 L 212 28 L 196 28 L 196 46 L 184 46 Z" fill="currentColor" />
+          </svg>
+        </div>
+
+        {/* CONQUER overlay */}
+        <div 
+          ref={conquerTextRef} 
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: 'calc(50% + 140px)',
+            transform: 'translate(-50%, -50%) skewX(-18deg) scale(0.6)',
+            zIndex: 15,
+            pointerEvents: 'none',
+            color: 'var(--accent-yellow)',
+            filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.8))',
+            opacity: 0
+          }}
+        >
+          <svg style={{ height: '60px', width: 'auto', display: 'block' }} viewBox="0 0 320 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 0 8 L 8 0 L 36 0 L 36 10 L 12 10 L 12 36 L 36 36 L 36 46 L 8 46 L 0 38 Z" fill="currentColor" />
+            <path d="M 46 8 L 54 0 L 74 0 L 82 8 L 82 38 L 74 46 L 54 46 L 46 38 Z M 58 10 L 70 10 L 70 36 L 58 36 Z" fill="currentColor" fillRule="evenodd" />
+            <path d="M 92 0 L 106 0 L 120 30 L 120 0 L 132 0 L 132 46 L 118 46 L 104 16 L 104 46 L 92 46 Z" fill="currentColor" />
+            <path d="M 142 8 L 150 0 L 170 0 L 178 8 L 178 32 L 182 36 L 182 46 L 172 46 L 168 42 L 150 42 L 142 34 Z M 154 10 L 166 10 L 166 32 L 154 32 Z" fill="currentColor" fillRule="evenodd" />
+            <path d="M 192 0 L 204 0 L 204 36 L 216 36 L 216 0 L 228 0 L 228 38 L 220 46 L 200 46 L 192 38 Z" fill="currentColor" />
+            <path d="M 238 0 L 274 0 L 274 10 L 250 10 L 250 18 L 268 18 L 268 28 L 250 28 L 250 36 L 274 36 L 274 46 L 238 46 Z" fill="currentColor" />
+            <path d="M 284 0 L 312 0 L 320 8 L 320 20 L 312 28 L 320 46 L 308 46 L 302 28 L 296 28 L 296 46 L 284 46 Z M 296 10 L 308 10 L 308 18 L 296 18 Z" fill="currentColor" fillRule="evenodd" />
+          </svg>
         </div>
 
         {/* OFFICIAL STENCILED OPTION WORDMARK WITH EXPANSION ANIMATION */}

@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
 
 :root {
   --bg-black: #000000;
@@ -279,5 +280,39 @@ body {
 .blur-overlay {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+}
+
+/* Custom Matching UI Animations */
+@keyframes scanline-anim {
+  0% { top: -10%; }
+  50% { top: 110%; }
+  100% { top: -10%; }
+}
+.animate-scan {
+  animation: scanline-anim 6s linear infinite;
+}
+
+@keyframes loader-anim {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+.animate-loader {
+  animation: loader-anim 3s linear forwards;
+}
+
+@keyframes redBorderPulse-anim {
+  0%, 100% { border-color: rgba(220, 38, 38, 0.4); box-shadow: inset 0 0 20px rgba(220, 38, 38, 0.3); }
+  50% { border-color: rgba(220, 38, 38, 1); box-shadow: inset 0 0 40px rgba(220, 38, 38, 0.7); }
+}
+.animate-redBorderPulse {
+  animation: redBorderPulse-anim 1.5s ease-in-out infinite;
+}
+
+@keyframes fadeIn-anim {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn-anim 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 

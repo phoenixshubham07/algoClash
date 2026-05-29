@@ -131,23 +131,7 @@ export const CyberButton = ({
           }}
         ></span>
         
-        {/* Dynamic Hex Data on left */}
-        <span 
-          style={{
-            position: 'absolute',
-            left: '8px',
-            bottom: '2px',
-            fontSize: '7px',
-            opacity: 0.5,
-            fontWeight: 'bold',
-            pointerEvents: 'none',
-            letterSpacing: '0px',
-            color: 'currentColor',
-            zIndex: 2
-          }}
-        >
-          {isHovered ? sysHex : 'SYS.RDY'}
-        </span>
+
 
         {/* Content Wrapper */}
         <span style={{ position: 'relative', zIndex: 10, display: 'inline-flex', alignItems: 'center', gap: '8px', pointerEvents: 'none' }}>
