@@ -2,9 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { CyberButton } from './CyberButton';
 
+
+
 export const ClashSplash = ({ onFinish }) => {
   const [phase, setPhase] = useState('initial'); // 'initial' | 'gloves_approach' | 'gloves_impact' | 'gloves_retreat' | 'cursors_approach' | 'cursors_impact' | 'hero_morph'
+  const [gloveForm, setGloveForm] = useState('pointer'); // 'pointer' | 'fist'
   
+  const phaseRef = useRef(phase);
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
   const canvasRef = useRef(null);
   const cursorContainerRef = useRef(null);
   const particlesRef = useRef([]);
@@ -18,7 +26,7 @@ export const ClashSplash = ({ onFinish }) => {
   const verticalRise = 45; // px
   const velocity = 0.32; // approach duration in seconds
 
-  // 14 columns x 13 rows programmatically mapped for the 8-bit trophy
+  // 14 columns x 13 rows programmatically mapped for the 8-bit trophy (kept for future use)
   const retroTrophyGrid = [
     [0,0,1,1,1,1,1,1,1,1,1,1,0,0], 
     [1,0,1,5,2,2,2,2,2,2,5,1,0,1], 
@@ -35,7 +43,59 @@ export const ClashSplash = ({ onFinish }) => {
     [0,0,1,1,1,1,1,1,1,1,1,1,0,0], 
   ];
 
-  // Programmatic 12x17 Classic Retro Cursors (image_0aeeab.png Matrix Map)
+  // Programmatic Pointer Hand (based on classic pointer cursor with 3 stripes)
+  const pointerHandGrid = [
+    [0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,2,2,1,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,2,2,1,1,1,1,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,2,2,1,2,2,1,1,1,1,0,0,0,0],
+    [0,0,0,0,0,1,2,2,1,2,2,1,2,2,1,1,0,0,0],
+    [1,1,1,1,0,1,2,2,1,2,2,1,2,2,1,1,1,1,1],
+    [1,2,2,1,1,1,2,2,1,2,2,1,2,2,1,2,2,2,1],
+    [1,2,2,2,1,1,2,2,1,2,2,1,2,2,1,2,2,2,1],
+    [1,2,2,2,2,1,2,2,1,2,2,1,2,2,1,2,2,2,1],
+    [1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+    [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+    [0,0,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+    [0,0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+    [0,0,0,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1,1],
+    [0,0,0,0,1,1,2,2,2,2,2,2,2,2,2,2,2,1,0],
+    [0,0,0,0,0,1,2,2,2,2,2,2,2,2,2,2,2,1,0],
+    [0,0,0,0,0,1,1,2,2,2,2,2,2,2,2,2,1,1,0],
+    [0,0,0,0,0,0,1,2,2,2,2,2,2,2,2,2,1,0,0],
+    [0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0]
+  ];
+
+  // Programmatic Fist/Grab Hand (closed punching fist)
+  const fistHandGrid = [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+    [0,0,0,0,1,2,2,2,2,2,2,2,2,2,1,0,0,0,0],
+    [0,0,0,1,2,2,2,2,2,2,2,2,2,2,2,1,0,0,0],
+    [0,0,0,1,2,1,1,1,2,1,1,1,2,1,1,1,1,0,0],
+    [0,0,1,2,2,1,2,2,1,2,2,1,2,2,2,2,2,1,0],
+    [0,1,2,2,2,1,2,2,1,2,2,1,2,2,2,2,2,1,0],
+    [1,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+    [1,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0],
+    [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0],
+    [0,0,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0],
+    [0,0,0,1,1,2,2,2,2,2,2,2,2,2,2,2,1,1,0],
+    [0,0,0,0,1,1,2,2,2,2,2,2,2,2,2,2,1,0,0],
+    [0,0,0,0,0,1,1,2,2,2,2,2,2,2,2,1,1,0,0],
+    [0,0,0,0,0,0,1,2,2,2,2,2,2,2,2,1,0,0,0],
+    [0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0]
+  ];
+
+  // Programmatic 12x17 Classic Retro Pointers
   const classicCursorGrid = [
     [1,1,0,0,0,0,0,0,0,0,0,0],
     [1,3,1,0,0,0,0,0,0,0,0,0],
@@ -68,30 +128,31 @@ export const ClashSplash = ({ onFinish }) => {
     timeoutsRef.current = [];
   };
 
-  // Spark particle physics (highly metallic, lingering welding sparks with ballistic arcs)
+  // Spark particle physics (highly metallic, welding sparks with ballistic arcs)
   class Spark {
     constructor(x, y) {
       this.x = x;
       this.y = y;
       
-      const angle = (Math.random() - 0.5) * Math.PI * 1.8;
-      const speed = Math.random() * 16 + 8; // high speed
+      // Much higher velocity and wider angle range for metal grinding sparks
+      const angle = (Math.random() - 0.5) * Math.PI * 1.95;
+      const speed = Math.random() * 24 + 10;
       
       this.vx = Math.cos(angle) * speed * (Math.random() > 0.5 ? 1 : -1);
-      this.vy = Math.sin(angle) * speed - 4; // initial upward velocity
-      this.size = Math.random() * 2.5 + 1.2;
+      this.vy = Math.sin(angle) * speed - 6; // initial upward velocity
+      this.size = Math.random() * 3.0 + 1.2;
       
-      // Welding spark colors: yellow, gold, orange, red-orange, white
-      const colors = ['#FFD700', '#FFA500', '#FF8C00', '#FF4500', '#FFFFFF'];
+      // Welding spark colors: brilliant white-hot center, gold, orange, red-orange
+      const colors = ['#FFFFFF', '#FFD700', '#FFA500', '#FF8C00', '#FF4500'];
       this.color = colors[Math.floor(Math.random() * colors.length)];
       
       this.alpha = 1;
-      this.decay = Math.random() * 0.035 + 0.02; // quick decay
-      this.drag = 0.96; // allow them to fly far
-      this.gravity = 0.28; // high gravity for beautiful arc
+      this.decay = Math.random() * 0.025 + 0.015; // slightly slower decay for lingering streaks
+      this.drag = 0.97; // allow them to fly far
+      this.gravity = 0.38; // high gravity for beautiful arc
       
       this.history = [{ x: this.x, y: this.y }];
-      this.maxHistory = 6;
+      this.maxHistory = 10; // longer trail
     }
 
     update() {
@@ -237,6 +298,19 @@ export const ClashSplash = ({ onFinish }) => {
         if (flareRef.current.alpha <= 0) flareRef.current = null;
       }
 
+      // Continuously spray metal sparks during impact phases to show welding grinding tension
+      if (phaseRef.current === 'gloves_impact' || phaseRef.current === 'cursors_impact') {
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        const time = Date.now();
+        // Grinding contact point Y shifts slightly over time to match jitter
+        const contactY = centerY + Math.sin(time * 0.05) * 8;
+        // Higher density of sparks (7 per frame) for welding appearance
+        for (let i = 0; i < 7; i++) {
+          particlesRef.current.push(new Spark(centerX, contactY));
+        }
+      }
+
       particlesRef.current = particlesRef.current.filter(p => {
         p.update();
         p.draw(ctx);
@@ -272,34 +346,40 @@ export const ClashSplash = ({ onFinish }) => {
 
   const triggerClash = () => {
     setPhase('initial');
+    setGloveForm('pointer');
     particlesRef.current = [];
     shockwaveRef.current = null;
     flareRef.current = null;
 
-    // 1. Gloves start approaching at 600ms
+    // 1. Gloves start approaching (pointer hand form) at 600ms
     addTimeout(() => {
       setPhase('gloves_approach');
 
-      // 2. Gloves clash at 920ms (600ms + 320ms velocity)
+      // 2. Gloves turn into fists midway (760ms, which is 600ms + 160ms)
+      addTimeout(() => {
+        setGloveForm('fist');
+      }, 160);
+
+      // 3. Gloves clash at 920ms (600ms + 320ms velocity)
       addTimeout(() => {
         setPhase('gloves_impact');
         
-        // Spawn sparks and shockwave
+        // Spawn initial sparks, shockwave, and flare
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
         flareRef.current = new Flare(centerX, centerY);
         shockwaveRef.current = new Shockwave(centerX, centerY);
         triggerSparks(centerX, centerY);
 
-        // 3. Gloves retreat and fade out at 1320ms
+        // 4. Gloves retreat and fade out at 1420ms (920ms + 500ms impact focus)
         addTimeout(() => {
           setPhase('gloves_retreat');
 
-          // 4. Cursors start approaching at 1820ms
+          // 5. Cursors start approaching at 1920ms (1420ms + 500ms retreat focus)
           addTimeout(() => {
             setPhase('cursors_approach');
 
-            // 5. Cursors clash at 2220ms
+            // 6. Cursors clash at 2320ms (1920ms + 400ms velocity)
             addTimeout(() => {
               setPhase('cursors_impact');
               
@@ -308,14 +388,14 @@ export const ClashSplash = ({ onFinish }) => {
               shockwaveRef.current = new Shockwave(centerX, centerY);
               triggerSparks(centerX, centerY);
 
-              // 6. Morph to hero and unlock viewport at 2720ms
+              // 7. Morph to hero and unlock viewport at 2820ms (2320ms + 500ms impact focus)
               addTimeout(() => {
                 setPhase('hero_morph');
               }, 500);
 
             }, 400);
           }, 500);
-        }, 400);
+        }, 500);
       }, 320);
     }, 600);
   };
@@ -351,32 +431,18 @@ export const ClashSplash = ({ onFinish }) => {
   };
 
   const renderGlove = (type = 'cyan', mirrored = false) => {
-    // 12 columns x 14 rows retro boxing glove
-    const gloveGrid = [
-      [0,0,0,1,1,1,1,1,0,0,0,0],
-      [0,0,1,2,2,2,2,2,1,0,0,0],
-      [0,1,2,2,2,2,2,2,2,1,0,0],
-      [0,1,2,3,2,2,2,2,2,1,0,0],
-      [1,2,2,3,2,2,2,2,2,2,1,0],
-      [1,2,2,2,2,2,2,2,2,2,1,0],
-      [1,2,2,2,2,2,2,1,1,1,1,0],
-      [1,2,2,2,2,2,1,2,2,2,1,0],
-      [0,1,2,2,2,1,2,3,2,1,0,0],
-      [0,0,1,2,2,1,2,2,1,0,0,0],
-      [0,0,0,1,1,1,1,1,1,0,0,0],
-      [0,0,0,0,1,4,4,4,1,0,0,0],
-      [0,0,0,0,1,4,4,4,1,0,0,0],
-      [0,0,0,0,0,1,1,1,0,0,0,0]
-    ];
+    const grid = gloveForm === 'pointer' ? pointerHandGrid : fistHandGrid;
+    const width = 19;
+    const height = 22;
 
     return (
       <svg 
         style={{ width: '100%', height: '100%' }}
-        viewBox="0 0 12 14" 
+        viewBox={`0 0 ${width} ${height}`} 
         fill="none" 
         xmlns="http://www.w3.org/2000/svg"
       >
-        {gloveGrid.map((row, rIdx) => {
+        {grid.map((row, rIdx) => {
           const currentRow = mirrored ? [...row].reverse() : row;
           return currentRow.map((cell, cIdx) => {
             if (cell === 0) return null;
@@ -385,13 +451,9 @@ export const ClashSplash = ({ onFinish }) => {
             if (type === 'cyan') {
               if (cell === 1) fill = "#083344"; // Dark outline
               if (cell === 2) fill = "#00f2fe"; // Cyan body
-              if (cell === 3) fill = "#FFFFFF"; // White highlight
-              if (cell === 4) fill = "#38bdf8"; // Cuff cyan
             } else {
               if (cell === 1) fill = "#450a0a"; // Dark outline
               if (cell === 2) fill = "#f43f5e"; // Crimson body
-              if (cell === 3) fill = "#FFFFFF"; // White highlight
-              if (cell === 4) fill = "#fb7185"; // Cuff crimson
             }
 
             return (
@@ -473,9 +535,10 @@ export const ClashSplash = ({ onFinish }) => {
     transform: 'translate(-100%, -50%) scale(2.2)',
     transformOrigin: 'right top',
     opacity: leftGloveOpacity,
-    transition: 'left 0.32s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.32s ease',
+    transition: phase === 'gloves_impact' ? 'none' : 'left 0.32s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.32s ease',
     filter: 'drop-shadow(0 0 12px var(--accent-cyan))',
-    pointerEvents: 'none'
+    pointerEvents: 'none',
+    animation: phase === 'gloves_impact' ? 'grind-slide-left 0.5s linear forwards' : 'none'
   };
 
   let rightGloveLeft = '95%';
@@ -496,9 +559,10 @@ export const ClashSplash = ({ onFinish }) => {
     transform: 'translate(0%, -50%) scale(2.2)',
     transformOrigin: 'left top',
     opacity: rightGloveOpacity,
-    transition: 'left 0.32s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.32s ease',
+    transition: phase === 'gloves_impact' ? 'none' : 'left 0.32s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.32s ease',
     filter: 'drop-shadow(0 0 12px var(--accent-crimson))',
-    pointerEvents: 'none'
+    pointerEvents: 'none',
+    animation: phase === 'gloves_impact' ? 'grind-slide-right 0.5s linear forwards' : 'none'
   };
 
   // Cursor coordinates and styles based on phase
@@ -528,8 +592,9 @@ export const ClashSplash = ({ onFinish }) => {
     transform: leftCursorTransform,
     transformOrigin: 'right top',
     opacity: leftCursorOpacity,
-    transition: 'left 0.35s cubic-bezier(0.25, 1, 0.5, 1), top 0.5s cubic-bezier(0.19, 1, 0.22, 1), transform 0.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease',
-    filter: 'drop-shadow(0 0 12px var(--accent-cyan))'
+    transition: phase === 'cursors_impact' ? 'none' : 'left 0.35s cubic-bezier(0.25, 1, 0.5, 1), top 0.5s cubic-bezier(0.19, 1, 0.22, 1), transform 0.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease',
+    filter: 'drop-shadow(0 0 12px var(--accent-cyan))',
+    animation: phase === 'cursors_impact' ? 'grind-cursor-left 0.5s linear forwards' : 'none'
   };
 
   let rightCursorLeft = '95%';
@@ -558,8 +623,9 @@ export const ClashSplash = ({ onFinish }) => {
     transform: rightCursorTransform,
     transformOrigin: 'left top',
     opacity: rightCursorOpacity,
-    transition: 'left 0.35s cubic-bezier(0.25, 1, 0.5, 1), top 0.5s cubic-bezier(0.19, 1, 0.22, 1), transform 0.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease',
-    filter: 'drop-shadow(0 0 12px var(--accent-crimson))'
+    transition: phase === 'cursors_impact' ? 'none' : 'left 0.35s cubic-bezier(0.25, 1, 0.5, 1), top 0.5s cubic-bezier(0.19, 1, 0.22, 1), transform 0.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease',
+    filter: 'drop-shadow(0 0 12px var(--accent-crimson))',
+    animation: phase === 'cursors_impact' ? 'grind-cursor-right 0.5s linear forwards' : 'none'
   };
 
   const showTrophy = phase === 'hero_morph';
@@ -1008,6 +1074,58 @@ export const ClashSplash = ({ onFinish }) => {
           65% { opacity: 1; transform: translate(0, 0); }
           70% { opacity: 0.9; transform: translate(-1px, -1px); }
           75% { opacity: 1; transform: translate(0, 0); }
+        }
+        @keyframes grind-slide-left {
+          0% { transform: translate(-100%, -50%) scale(2.2) translate(0px, 0px); }
+          10% { transform: translate(-100%, -50%) scale(2.2) translate(1px, -2px); }
+          20% { transform: translate(-100%, -50%) scale(2.2) translate(-1px, -4px); }
+          30% { transform: translate(-100%, -50%) scale(2.2) translate(2px, -5px); }
+          40% { transform: translate(-100%, -50%) scale(2.2) translate(-2px, -7px); }
+          50% { transform: translate(-100%, -50%) scale(2.2) translate(1px, -8px); }
+          60% { transform: translate(-100%, -50%) scale(2.2) translate(-1px, -10px); }
+          70% { transform: translate(-100%, -50%) scale(2.2) translate(2px, -11px); }
+          80% { transform: translate(-100%, -50%) scale(2.2) translate(-2px, -13px); }
+          90% { transform: translate(-100%, -50%) scale(2.2) translate(1px, -14px); }
+          100% { transform: translate(-100%, -50%) scale(2.2) translate(0px, -15px); }
+        }
+        @keyframes grind-slide-right {
+          0% { transform: translate(0%, -50%) scale(2.2) translate(0px, 0px); }
+          10% { transform: translate(0%, -50%) scale(2.2) translate(-1px, 2px); }
+          20% { transform: translate(0%, -50%) scale(2.2) translate(1px, 4px); }
+          30% { transform: translate(0%, -50%) scale(2.2) translate(-2px, 5px); }
+          40% { transform: translate(0%, -50%) scale(2.2) translate(2px, 7px); }
+          50% { transform: translate(0%, -50%) scale(2.2) translate(-1px, 8px); }
+          60% { transform: translate(0%, -50%) scale(2.2) translate(1px, 10px); }
+          70% { transform: translate(0%, -50%) scale(2.2) translate(-2px, 11px); }
+          80% { transform: translate(0%, -50%) scale(2.2) translate(2px, 13px); }
+          90% { transform: translate(0%, -50%) scale(2.2) translate(-1px, 14px); }
+          100% { transform: translate(0%, -50%) scale(2.2) translate(0px, 15px); }
+        }
+        @keyframes grind-cursor-left {
+          0% { transform: translate(-100%, -50%) scale(2.2) rotate(18deg) translate(0px, 0px); }
+          10% { transform: translate(-100%, -50%) scale(2.2) rotate(18deg) translate(1px, -2px); }
+          20% { transform: translate(-100%, -50%) scale(2.2) rotate(18deg) translate(-1px, -4px); }
+          30% { transform: translate(-100%, -50%) scale(2.2) rotate(18deg) translate(2px, -5px); }
+          40% { transform: translate(-100%, -50%) scale(2.2) rotate(18deg) translate(-2px, -7px); }
+          50% { transform: translate(-100%, -50%) scale(2.2) rotate(18deg) translate(1px, -8px); }
+          60% { transform: translate(-100%, -50%) scale(2.2) rotate(18deg) translate(-1px, -10px); }
+          70% { transform: translate(-100%, -50%) scale(2.2) rotate(18deg) translate(2px, -11px); }
+          80% { transform: translate(-100%, -50%) scale(2.2) rotate(18deg) translate(-2px, -13px); }
+          90% { transform: translate(-100%, -50%) scale(2.2) rotate(18deg) translate(1px, -14px); }
+          100% { transform: translate(-100%, -50%) scale(2.2) rotate(18deg) translate(0px, -15px); }
+        }
+        @keyframes grind-cursor-right {
+          0% { transform: translate(0%, -50%) scale(2.2) rotate(-18deg) translate(0px, 0px); }
+          10% { transform: translate(0%, -50%) scale(2.2) rotate(-18deg) translate(-1px, 2px); }
+          20% { transform: translate(0%, -50%) scale(2.2) rotate(-18deg) translate(1px, 4px); }
+          30% { transform: translate(0%, -50%) scale(2.2) rotate(-18deg) translate(-2px, 5px); }
+          40% { transform: translate(0%, -50%) scale(2.2) rotate(-18deg) translate(2px, 7px); }
+          50% { transform: translate(0%, -50%) scale(2.2) rotate(-18deg) translate(-1px, 8px); }
+          60% { transform: translate(0%, -50%) scale(2.2) rotate(-18deg) translate(1px, 10px); }
+          70% { transform: translate(0%, -50%) scale(2.2) rotate(-18deg) translate(-2px, 11px); }
+          80% { transform: translate(0%, -50%) scale(2.2) rotate(-18deg) translate(2px, 13px); }
+          90% { transform: translate(0%, -50%) scale(2.2) rotate(-18deg) translate(-1px, 14px); }
+          100% { transform: translate(0%, -50%) scale(2.2) rotate(-18deg) translate(0px, 15px); }
         }
       `}</style>
     </div>
