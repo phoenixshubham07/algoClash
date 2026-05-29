@@ -1215,7 +1215,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
       {/* FLOATING LOGO (BOTTOM RIGHT) WHEN SCROLLED */}
       <motion.div
         animate={{
-          opacity: scrolled ? 1 : 0,
+          opacity: scrolled ? 0.72 : 0,
           scale: scrolled ? 0.65 : 0.2,
           y: scrolled ? 0 : 50,
         }}
@@ -1230,18 +1230,12 @@ export const LandingPage = ({ onNavigateToArena }) => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          backgroundColor: 'rgba(10, 10, 12, 0.72)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(0, 242, 254, 0.25)',
-          padding: '16px 20px',
-          clipPath: 'polygon(0% 0%, 90% 0%, 100% 10px, 100% 100%, 10% 100%, 0% calc(100% - 10px))',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 242, 254, 0.1)',
-          pointerEvents: scrolled ? 'auto' : 'none'
+          pointerEvents: scrolled ? 'auto' : 'none',
+          transition: 'opacity 0.2s ease'
         }}
         whileHover={{
-          scale: 0.7,
-          borderColor: 'var(--accent-cyan)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.7), 0 0 25px rgba(0, 242, 254, 0.2)'
+          scale: 0.72,
+          opacity: 1
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
@@ -1257,9 +1251,6 @@ export const LandingPage = ({ onNavigateToArena }) => {
             </div>
           </div>
         </div>
-        <span style={{ fontSize: '8px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', marginTop: '8px', letterSpacing: '0.15em', fontWeight: 'bold' }}>
-          ASCEND // TO_TOP
-        </span>
       </motion.div>
 
     </div>
