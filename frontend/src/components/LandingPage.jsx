@@ -1,0 +1,908 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { CyberButton } from './CyberButton';
+import { CyberCard } from './CyberCard';
+import { TournamentBracket } from './TournamentBracket';
+
+export const LandingPage = ({ onNavigateToArena }) => {
+  // Programmatic 12x17 Classic Retro Cursors (image_0aeeab.png Matrix Map)
+  const classicCursorGrid = [
+    [1,1,0,0,0,0,0,0,0,0,0,0],
+    [1,3,1,0,0,0,0,0,0,0,0,0],
+    [1,2,3,1,0,0,0,0,0,0,0,0],
+    [1,2,2,3,1,0,0,0,0,0,0,0],
+    [1,2,2,2,3,1,0,0,0,0,0,0],
+    [1,2,2,2,2,3,1,0,0,0,0,0],
+    [1,2,2,2,2,2,3,1,0,0,0,0],
+    [1,2,2,2,2,2,2,3,1,0,0,0],
+    [1,2,2,2,2,2,2,2,3,1,0,0],
+    [1,2,2,2,2,2,2,2,2,3,1,0],
+    [1,2,2,2,2,2,1,1,1,1,1,1],
+    [1,2,2,1,2,2,1,0,0,0,0,0],
+    [1,2,1,0,1,2,2,1,0,0,0,0],
+    [1,1,0,0,1,2,2,1,0,0,0,0],
+    [0,0,0,0,0,1,2,2,1,0,0,0],
+    [0,0,0,0,0,1,2,2,1,0,0,0],
+    [0,0,0,0,0,0,1,1,0,0,0,0]
+  ];
+
+  const renderCursor = (type = 'cyan', mirrored = false) => {
+    return (
+      <svg style={{ width: '100%', height: '100%' }} viewBox="0 0 12 17" fill="none">
+        {classicCursorGrid.map((row, rIdx) => {
+          const currentRow = mirrored ? [...row].reverse() : row;
+          return currentRow.map((cell, cIdx) => {
+            if (cell === 0) return null;
+            let fill = 'var(--accent-cyan)';
+            if (type === 'cyan') {
+              if (cell === 1) fill = '#051d26';
+              if (cell === 2) fill = 'var(--accent-cyan)';
+              if (cell === 3) fill = '#FFFFFF';
+            } else {
+              if (cell === 1) fill = '#300812';
+              if (cell === 2) fill = 'var(--accent-crimson)';
+              if (cell === 3) fill = '#FFFFFF';
+            }
+            return (
+              <rect 
+                key={`${type}-${rIdx}-${cIdx}`}
+                x={cIdx} y={rIdx} width="1" height="1" 
+                fill={fill} stroke={fill} strokeWidth="0.05"
+              />
+            );
+          });
+        })}
+      </svg>
+    );
+  };
+
+  // Motion variants for letter-by-letter staggering reveal skewed at exactly 18-degrees!
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const letterVariants = {
+    hidden: { opacity: 0, y: 15, scale: 0.9, skewX: -18 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      skewX: -18,
+      transition: {
+        type: 'spring',
+        stiffness: 180,
+        damping: 12
+      }
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative', width: '100%', minHeight: '100vh', backgroundColor: 'var(--bg-black)', overflow: 'hidden' }}>
+      {/* BACKGROUND GRAPHICS & TEXTURES */}
+      <div className="grid-bg"></div>
+      <div className="scanlines"></div>
+
+      {/* HEADER / NAVIGATION BAR */}
+      <header style={{
+        position: 'relative',
+        zIndex: 20,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '20px 5%',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        backgroundColor: 'rgba(2,2,3,0.92)',
+        backdropFilter: 'blur(12px)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Small 18-degree mini clashing icon */}
+          <div style={{ display: 'flex', gap: '2px', height: '18px', width: '26px' }}>
+            <div style={{ transform: 'rotate(18deg) scale(0.65)', transformOrigin: 'right top' }}>{renderCursor('cyan', true)}</div>
+            <div style={{ transform: 'rotate(-18deg) scale(0.65)', transformOrigin: 'left top' }}>{renderCursor('crimson', false)}</div>
+          </div>
+          <span className="font-display" style={{ fontWeight: '900', fontSize: '20px', letterSpacing: '0.2em', color: '#fff' }}>
+            ALGO<span style={{ color: 'var(--accent-cyan)' }}>CLASH</span>
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '32px', fontSize: '10px', fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>
+          <a href="#logo-fold" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">01 // IDENTITY</a>
+          <a href="#tech-moat" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">02 // ANTI_CHEAT</a>
+          <a href="#ui-preview" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">03 // INGAME_HUD</a>
+          <a href="#combat-contrast" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em' }} className="cyber-glitch-text">04 // COMBAT</a>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <a href="/login" style={{ textDecoration: 'none' }}>
+            <CyberButton variant="ghost" size="sm">
+              LOG IN
+            </CyberButton>
+          </a>
+          <CyberButton variant="primary" size="sm" onClick={() => onNavigateToArena(null)}>
+            LAUNCH SIMULATOR
+          </CyberButton>
+        </div>
+      </header>
+
+      {/* SECTION 1: LOGO / HERO SECTION */}
+      <section 
+        id="logo-fold"
+        style={{
+          position: 'relative',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '88vh',
+          padding: '60px 5%',
+          textAlign: 'center',
+          maxWidth: '1200px',
+          margin: '0 auto'
+        }}
+      >
+        {/* Decorative Grid Coordinates Decals */}
+        <div style={{ position: 'absolute', top: '40px', left: '20px', fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+          [SEC: PRIVATE_SANDBOX // MUM_NODE_03]
+        </div>
+        <div style={{ position: 'absolute', top: '40px', right: '20px', fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+          [S/N: 4275EV17EN // MODEL: COMBAT_UNIT]
+        </div>
+
+        {/* 18-degree Animated Clashing Cursors (Scaled Down and Symmetrical) */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+          
+          <div style={{ display: 'flex', gap: '4px', height: '36px', width: '52px', marginBottom: '16px', position: 'relative' }}>
+            {/* Left Cyan Cursor Enters Symmetrically and floats */}
+            <motion.div 
+              initial={{ x: -100, opacity: 0 }}
+              animate={{ 
+                x: 0, 
+                opacity: 1,
+                y: [0, -6, 0]
+              }}
+              transition={{ 
+                x: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
+                opacity: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
+                y: { repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.8 }
+              }}
+              style={{ transform: 'rotate(18deg)', transformOrigin: 'right top', filter: 'drop-shadow(0 0 6px var(--accent-cyan))', width: '24px', height: '34px' }}
+            >
+              {renderCursor('cyan', true)}
+            </motion.div>
+
+            {/* Right Crimson Cursor Enters Symmetrically and floats */}
+            <motion.div 
+              initial={{ x: 100, opacity: 0 }}
+              animate={{ 
+                x: 0, 
+                opacity: 1,
+                y: [0, 6, 0]
+              }}
+              transition={{ 
+                x: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
+                opacity: { type: 'spring', stiffness: 80, damping: 15, delay: 0.1 },
+                y: { repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.8 }
+              }}
+              style={{ transform: 'rotate(-18deg)', transformOrigin: 'left top', filter: 'drop-shadow(0 0 6px var(--accent-crimson))', width: '24px', height: '34px' }}
+            >
+              {renderCursor('crimson', false)}
+            </motion.div>
+          </div>
+          
+          <motion.h2 
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 0.8, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="font-display" 
+            style={{ fontSize: '10px', letterSpacing: '0.45em', fontWeight: 'bold', color: 'var(--accent-yellow)', textTransform: 'uppercase', textShadow: '0 0 8px rgba(255,215,0,0.25)' }}
+          >
+            來未 // FUTURE DIGITAL DUELS
+          </motion.h2>
+        </div>
+
+        {/* OFFICIAL STENCILED OPTION WORDMARK WITH EXPANSION ANIMATION */}
+        <div 
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            fontFamily: "'Space Grotesk', sans-serif", 
+            fontSize: 'clamp(32px, 6.5vw, 68px)', 
+            fontWeight: 900, 
+            color: '#fff', 
+            userSelect: 'none', 
+            position: 'relative',
+            padding: '24px 0',
+            marginBottom: '28px',
+            filter: 'drop-shadow(0 0 20px rgba(0,242,254,0.05))'
+          }}
+        >
+          {/* Left Sleek Skewed Cyan Bracket - slide left */}
+          <motion.span 
+            initial={{ opacity: 0, x: 95, skewX: -18 }}
+            animate={{ opacity: 1, x: 0, skewX: -18 }}
+            transition={{ type: 'spring', stiffness: 90, damping: 14, delay: 0.1 }}
+            style={{ display: 'inline-block', color: 'var(--accent-cyan)', marginRight: '8px', textShadow: '0 0 10px rgba(0, 242, 254, 0.4)' }}
+          >
+            &lt;
+          </motion.span>
+
+          {/* algo (lowercase) simple upright Space Grotesk font style */}
+          <span style={{ display: 'flex', color: '#fff', letterSpacing: '0.04em', fontWeight: 400, fontStyle: 'normal', fontFamily: "'Space Grotesk', sans-serif", textTransform: 'none' }}>
+            {'algo'.split('').map((char, idx) => (
+              <motion.span 
+                key={`algo-${idx}`}
+                initial={{ opacity: 0, x: 15, skewX: 0 }}
+                animate={{ opacity: 1, x: 0, skewX: 0 }}
+                transition={{ type: 'spring', stiffness: 100, damping: 12, delay: 0.2 + (3 - idx) * 0.05 }}
+                style={{ display: 'inline-block' }}
+              >
+                {char}
+              </motion.span>
+            ))}
+          </span>
+
+          {/* Crimson Red Option Separator skewed at 18-deg with asymmetrical spacing to resolve skew collision */}
+          <motion.span 
+            initial={{ opacity: 0, scale: 0, skewX: -18 }}
+            animate={{ opacity: 1, scale: 1, skewX: -18 }}
+            transition={{ type: 'spring', stiffness: 120, damping: 10, delay: 0.05 }}
+            style={{ display: 'inline-block', marginLeft: '-0.02em', marginRight: '0.12em', color: 'var(--accent-crimson)', textShadow: '0 0 12px rgba(244, 63, 94, 0.65)' }}
+          >
+            ⌥
+          </motion.span>
+
+          {/* CLASH: Razor-Sharp Vector font - skewed at -18deg with centered Katakana subtitle absolutely underneath */}
+          <div style={{ display: 'inline-flex', position: 'relative', alignItems: 'center' }}>
+            <motion.span 
+              initial={{ opacity: 0, x: -15 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ type: 'spring', stiffness: 100, damping: 12, delay: 0.2 }}
+              style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center',
+                color: 'var(--accent-cyan)',
+                filter: 'drop-shadow(0 0 12px rgba(0, 242, 254, 0.5))',
+                transform: 'skewX(-18deg)',
+                marginLeft: '0.04em'
+              }}
+            >
+              <svg style={{ height: '0.72em', width: 'auto', display: 'block' }} viewBox="0 0 224 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* C */}
+                <motion.path 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 100, damping: 12, delay: 0.2 }}
+                  d="M 0 8 L 8 0 L 36 0 L 36 10 L 12 10 L 12 36 L 36 36 L 36 46 L 8 46 L 0 38 Z" 
+                  fill="currentColor" 
+                />
+                {/* L */}
+                <motion.path 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 100, damping: 12, delay: 0.28 }}
+                  d="M 46 0 L 58 0 L 58 36 L 82 36 L 82 46 L 46 46 Z" 
+                  fill="currentColor" 
+                />
+                {/* A */}
+                <motion.path 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 100, damping: 12, delay: 0.36 }}
+                  d="M 92 46 L 92 8 L 100 0 L 120 0 L 128 8 L 128 46 L 116 46 L 116 30 L 104 30 L 104 46 Z M 104 20 L 116 20 L 116 10 L 104 10 Z" 
+                  fill="currentColor" 
+                />
+                {/* S */}
+                <motion.path 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 100, damping: 12, delay: 0.44 }}
+                  d="M 138 8 L 146 0 L 174 0 L 174 10 L 150 10 L 150 18 L 166 18 L 174 26 L 174 38 L 166 46 L 138 46 L 138 36 L 162 36 L 162 28 L 146 28 L 138 20 Z" 
+                  fill="currentColor" 
+                />
+                {/* H */}
+                <motion.path 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 100, damping: 12, delay: 0.52 }}
+                  d="M 184 0 L 196 0 L 196 18 L 212 18 L 212 0 L 224 0 L 224 46 L 212 46 L 212 28 L 196 28 L 196 46 L 184 46 Z" 
+                  fill="currentColor" 
+                />
+              </svg>
+            </motion.span>
+            
+            {/* Absolute Centered Katakana Subtitle */}
+            <motion.span 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+              style={{ 
+                fontSize: '11px', 
+                fontWeight: 800,
+                letterSpacing: '0.65em', 
+                color: 'var(--accent-crimson)', 
+                textShadow: '0 0 8px rgba(244, 63, 94, 0.8)',
+                fontFamily: "'Space Grotesk', sans-serif",
+                textTransform: 'uppercase',
+                display: 'inline-block',
+                transform: 'skewX(-18deg) translateX(-50%)',
+                position: 'absolute',
+                bottom: '-20px',
+                left: '50%',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              クラッシュ
+            </motion.span>
+          </div>
+
+          {/* Right Sleek Skewed Cyan Bracket - slide right */}
+          <motion.span 
+            initial={{ opacity: 0, x: -160, skewX: -18 }}
+            animate={{ opacity: 1, x: 0, skewX: -18 }}
+            transition={{ type: 'spring', stiffness: 90, damping: 14, delay: 0.1 }}
+            style={{ display: 'inline-block', color: 'var(--accent-cyan)', marginLeft: '8px', textShadow: '0 0 10px rgba(0, 242, 254, 0.4)' }}
+          >
+            &gt;
+          </motion.span>
+        </div>
+
+        {/* Tagline */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.45 }}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '28px' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '4px', height: '4px', backgroundColor: 'var(--accent-cyan)' }}></span>
+            <span style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '13px',
+              fontWeight: '900',
+              letterSpacing: '0.4em',
+              color: 'var(--text-secondary)',
+              textTransform: 'uppercase',
+              fontStyle: 'italic'
+            }}>
+              code.clash.conquer.
+            </span>
+            <span style={{ width: '4px', height: '4px', backgroundColor: 'var(--accent-crimson)' }}></span>
+          </div>
+          
+          <span style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '9px',
+            letterSpacing: '0.25em',
+            color: 'var(--text-muted)',
+            textTransform: 'uppercase',
+            marginTop: '4px'
+          }}>
+            [ LOGS // CODING IS NOT AN EXAM. IT'S A 1V1 DUEL ]
+          </span>
+          
+          <div style={{ height: '2px', width: '80px', background: 'linear-gradient(90deg, transparent, var(--accent-cyan), transparent)', marginTop: '8px' }}></div>
+        </motion.div>
+
+        {/* Action Buttons */}
+        <motion.div 
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.55 }}
+          style={{ display: 'flex', gap: '16px', zIndex: 10 }}
+        >
+          <CyberButton variant="primary" size="lg" onClick={() => onNavigateToArena(null)}>
+            ENTER THE BATTLEFIELD
+          </CyberButton>
+          <a href="#tech-moat" style={{ textDecoration: 'none' }}>
+            <CyberButton variant="ghost" size="lg">
+              VIEW TELEMETRY SPECS
+            </CyberButton>
+          </a>
+        </motion.div>
+
+        {/* Sleek CSS-animated Mouse Indicator */}
+        <motion.div 
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 0.65, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.6 }}
+          style={{ marginTop: '54px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
+        >
+          <svg width="22" height="36" viewBox="0 0 24 40" fill="none">
+            <rect x="2" y="2" width="20" height="36" rx="10" stroke="var(--accent-cyan)" strokeWidth="1.5" />
+            <motion.circle 
+              cx="12" 
+              cy="12" 
+              r="2" 
+              fill="var(--accent-yellow)"
+              animate={{
+                y: [0, 16, 0],
+                opacity: [0.3, 1, 0.3]
+              }}
+              transition={{
+                duration: 1.8,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+          </svg>
+          <span style={{ fontSize: '9px', letterSpacing: '0.2em', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
+            SCROLL TO DECRYPT
+          </span>
+        </motion.div>
+      </section>
+
+      {/* SECTION 2: WHAT MAKES US DIFFERENT (TECH MOAT & ANTI-CHEAT) */}
+      <section 
+        id="tech-moat"
+        style={{
+          position: 'relative',
+          zIndex: 10,
+          padding: '100px 5%',
+          backgroundColor: 'var(--bg-carbon)',
+          borderTop: '1px solid rgba(255,255,255,0.03)',
+          borderBottom: '1px solid rgba(255,255,255,0.03)'
+        }}
+      >
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '48px', alignItems: 'center' }}>
+            
+            {/* Left: Anti-Cheat Telemetry Graphic */}
+            <motion.div 
+              initial={{ opacity: 0, x: -24 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6 }}
+              style={{ position: 'relative' }}
+            >
+              <div style={{ position: 'absolute', top: '-16px', left: '-16px', fontSize: '9px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)' }}>[PROCTORING_HUD_V1]</div>
+              <div style={{ position: 'absolute', bottom: '-16px', right: '-16px', fontSize: '9px', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>[SYS_CLEARANCE: HIGH]</div>
+              
+              {/* Stepped Chassis Frame Border */}
+              <div style={{
+                border: '1px solid #1c202d',
+                backgroundColor: 'rgba(5,6,8,0.95)',
+                padding: '28px',
+                position: 'relative',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.95)',
+                clipPath: 'polygon(0% 0%, 92% 0%, 100% 24px, 100% 100%, 8% 100%, 0% calc(100% - 24px))'
+              }}>
+                {/* Corner Accents */}
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '12px', height: '12px', borderTop: '2px solid var(--accent-yellow)', borderLeft: '2px solid var(--accent-yellow)' }}></div>
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: '12px', height: '12px', borderBottom: '2px solid var(--accent-cyan)', borderRight: '2px solid var(--accent-cyan)' }}></div>
+                
+                {/* Dotted Grid Background */}
+                <div className="bg-micro-dot" style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }}></div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="hazard-stripes-sm" style={{ width: '10px', height: '18px' }}></div>
+                    <span className="font-display" style={{ fontWeight: 'bold', letterSpacing: '0.15em', fontSize: '12px', color: 'var(--accent-yellow)' }}>
+                      SECURITY TIMELINE AUDIT
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '8px', color: 'var(--accent-crimson)', fontWeight: 'bold', border: '1px solid var(--accent-crimson)', padding: '1px 6px', borderRadius: '2px' }}>
+                    ACTIVE
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>
+                  <div style={{ borderLeft: '2px solid var(--accent-cyan)', paddingLeft: '10px' }}>
+                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 'bold' }}>19:02:11 // SYS_BOOT</span>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>Anti-cheat sandbox layers successfully mounted.</p>
+                  </div>
+                  <div style={{ borderLeft: '2px solid var(--accent-yellow)', paddingLeft: '10px' }}>
+                    <span style={{ color: 'var(--accent-yellow)', fontWeight: 'bold' }}>19:04:47 // focus_lost</span>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>Tab focus lost. Warning dispatched [1/2].</p>
+                  </div>
+                  <div style={{ borderLeft: '2px solid var(--accent-crimson)', paddingLeft: '10px' }}>
+                    <span style={{ color: 'var(--accent-crimson)', fontWeight: 'bold' }}>19:08:12 // paste_blocked</span>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>ChatGPT pre-written block injection blocked.</p>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '20px', borderTop: '1px dashed rgba(255,255,255,0.06)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>S/N: 4275EV17EN</span>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <div style={{ width: '8px', height: '4px', backgroundColor: 'var(--accent-cyan)' }}></div>
+                    <div style={{ width: '8px', height: '4px', backgroundColor: 'var(--accent-yellow)' }}></div>
+                    <div style={{ width: '8px', height: '4px', backgroundColor: 'var(--accent-crimson)' }}></div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Right: Snappy Tactical Security Moat Features */}
+            <motion.div
+              initial={{ opacity: 0, x: 24 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6 }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '14px', color: 'var(--accent-cyan)' }}>⚡</span>
+                <span style={{ fontSize: '9px', color: 'var(--accent-cyan)', letterSpacing: '0.3em', fontWeight: 'bold' }}>TACTICAL PROCTORING</span>
+              </div>
+              
+              <h2 className="font-display font-bold glow-cyan" style={{ fontSize: '32px', color: '#fff', textTransform: 'uppercase', marginBottom: '24px', letterSpacing: '0.05em' }}>
+                SECURITY MOAT
+              </h2>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Layer 1 */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '120px 1fr',
+                  alignItems: 'center',
+                  padding: '16px',
+                  backgroundColor: 'rgba(255,255,255,0.01)',
+                  border: '1px solid rgba(255,255,255,0.04)',
+                  position: 'relative'
+                }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-cyan)', fontWeight: 'bold' }}>
+                    [ 01 // SCREEN ]
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <h4 style={{ color: '#fff', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}>FULLSCREEN LIMIT</h4>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Mandated focus layer. Escaping fullscreen triggers instant warning points.</p>
+                  </div>
+                </div>
+
+                {/* Layer 2 */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '120px 1fr',
+                  alignItems: 'center',
+                  padding: '16px',
+                  backgroundColor: 'rgba(255,255,255,0.01)',
+                  border: '1px solid rgba(255,255,255,0.04)',
+                  position: 'relative'
+                }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-yellow)', fontWeight: 'bold' }}>
+                    [ 02 // GUARD ]
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <h4 style={{ color: '#fff', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}>INTELLIGENT PASTE DEFENSE</h4>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Keystroke delta split-analysis catches pre-written templates and external imports.</p>
+                  </div>
+                </div>
+
+                {/* Layer 3 */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '120px 1fr',
+                  alignItems: 'center',
+                  padding: '16px',
+                  backgroundColor: 'rgba(255,255,255,0.01)',
+                  border: '1px solid rgba(255,255,255,0.04)',
+                  position: 'relative'
+                }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-crimson)', fontWeight: 'bold' }}>
+                    [ 03 // AUDIT ]
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <h4 style={{ color: '#fff', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}>TAMPER-PROOF LOGS</h4>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Encrypted postgres timeline visibility logs secure match results against disputes.</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* SECTION 3: IN-GAME UI DISPLAY (4 CARDS) */}
+      <section 
+        id="ui-preview"
+        style={{
+          position: 'relative',
+          zIndex: 10,
+          padding: '100px 5%',
+          backgroundColor: '#000000',
+          borderBottom: '1px solid rgba(255,255,255,0.03)'
+        }}
+      >
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <span style={{ fontSize: '9px', color: 'var(--accent-yellow)', letterSpacing: '0.3em', fontWeight: 'bold' }}>HUD TELEMETRY PREVIEW</span>
+            <h2 className="font-display font-bold glow-yellow" style={{ fontSize: '32px', color: '#fff', textTransform: 'uppercase', marginTop: '6px' }}>
+              BATTLEGROUND HUD
+            </h2>
+            <div className="hazard-stripes-sm" style={{ width: '80px', height: '4px', margin: '12px auto 0 auto' }}></div>
+          </div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6, staggerChildren: 0.1 }}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '24px'
+            }}
+          >
+            
+            {/* Card 1: Ghost Cursors */}
+            <div style={{ position: 'relative' }}>
+              <div className="hazard-stripes-cyan" style={{ height: '4px', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 20 }}></div>
+              <CyberCard variant="primary" title="LIVE GHOST CURSORS" systemCode="FEAT.CURS_01" statusText="SYNC">
+                Watch your opponent's active editing line jump across files in real time. Absolute mechanical pressure.
+                <div style={{ display: 'flex', gap: '4px', height: '14px', width: '20px', marginTop: '16px', opacity: 0.8 }}>
+                  <div style={{ transform: 'rotate(18deg) scale(0.5)', transformOrigin: 'right top' }}>{renderCursor('cyan', true)}</div>
+                  <div style={{ transform: 'rotate(-18deg) scale(0.5)', transformOrigin: 'left top' }}>{renderCursor('crimson', false)}</div>
+                </div>
+              </CyberCard>
+            </div>
+
+            {/* Card 2: Red Screen warnings */}
+            <div style={{ position: 'relative' }}>
+              <div className="hazard-stripes-crimson" style={{ height: '4px', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 20 }}></div>
+              <CyberCard variant="danger" title="PULSING RED ALERTS" systemCode="FEAT.WARN_02" statusText="PULSE">
+                Workspace sways and pulses crimson when the opponent crosses $\ge 80\%$ test cases accuracy. Fight through the alarms.
+              </CyberCard>
+            </div>
+
+            {/* Card 3: 2-Submit Hard Cap */}
+            <div style={{ position: 'relative' }}>
+              <div className="hazard-stripes-sm" style={{ height: '4px', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 20 }}></div>
+              <CyberCard variant="warning" title="2-SUBMIT HARD CAP" systemCode="FEAT.LIMIT_03" statusText="CAP">
+                Two attempts max. Evaluate sample tests infinitely, but submit locks only when you are absolutely locked and loaded.
+              </CyberCard>
+            </div>
+
+            {/* Card 4: Spectator Stagger */}
+            <div style={{ position: 'relative' }}>
+              <div style={{ height: '4px', width: '100%', backgroundColor: '#333', position: 'absolute', top: 0, left: 0, zIndex: 20 }}></div>
+              <CyberCard variant="default" title="SPECTATOR ROUTING" systemCode="FEAT.SPEC_04" statusText="LIVE">
+                Zero competitive downtime. Instant automatic redirection to spectator slots on bracket sibling duels on finish.
+              </CyberCard>
+            </div>
+
+          </motion.div>
+
+          {/* Floating Kanji Decal Overlay */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            gap: '32px', 
+            marginTop: '40px', 
+            fontSize: '10px', 
+            fontFamily: 'var(--font-mono)', 
+            color: 'var(--text-muted)',
+            letterSpacing: '0.15em'
+          }}>
+            <span>未来 [FUTURE]</span>
+            <span>対決 [DUEL]</span>
+            <span>戦闘 [COMBAT]</span>
+            <span>極限 [LIMIT]</span>
+          </div>
+
+        </div>
+      </section>
+
+      {/* SECTION 4: HOW WE WILL CONVERT AND KILL TRADITIONAL CODING */}
+      <section 
+        id="combat-contrast"
+        style={{
+          position: 'relative',
+          zIndex: 10,
+          padding: '80px 5%',
+          backgroundColor: 'var(--bg-carbon)',
+          borderBottom: '1px solid rgba(255,255,255,0.03)'
+        }}
+      >
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <span style={{ fontSize: '9px', color: 'var(--accent-crimson)', letterSpacing: '0.3em', fontWeight: 'bold' }}>PLATFORM REVOLUTION</span>
+            <h2 className="font-display font-bold glow-crimson" style={{ fontSize: '32px', color: '#fff', textTransform: 'uppercase', marginTop: '6px' }}>
+              THE EVOLUTION
+            </h2>
+            <div style={{ width: '80px', height: '2px', backgroundColor: 'var(--accent-crimson)', margin: '12px auto 0 auto' }}></div>
+          </div>
+
+          {/* Contrast Dashboard Table Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: '32px'
+          }}>
+            
+            {/* The Old LeetCode Style */}
+            <motion.div 
+              initial={{ opacity: 0, x: -16 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5 }}
+              style={{
+                border: '1px solid #200d11',
+                backgroundColor: 'rgba(8,4,5,0.7)',
+                padding: '24px',
+                position: 'relative',
+                boxSizing: 'border-box',
+                clipPath: 'polygon(0% 0%, 100% 0%, 100% calc(100% - 16px), 94% 100%, 0% 100%)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(244,63,94,0.1)', paddingBottom: '12px', marginBottom: '16px' }}>
+                <span style={{ color: 'var(--accent-crimson)', fontWeight: 'bold', fontSize: '14px' }}>✗</span>
+                <span className="font-display" style={{ fontWeight: 'bold', color: 'var(--accent-crimson)', textTransform: 'uppercase', letterSpacing: '0.15em', fontSize: '12px' }}>
+                  TRADITIONAL CODING EXAMS
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                <div style={{ textDecoration: 'line-through', opacity: 0.55 }}>• Solitary submission grids into a blind, cold database</div>
+                <div style={{ textDecoration: 'line-through', opacity: 0.55 }}>• Brute-force template testing using infinite tries</div>
+                <div style={{ textDecoration: 'line-through', opacity: 0.55 }}>• Zero psychological alerts or in-game tracking indicators</div>
+                <div style={{ textDecoration: 'line-through', opacity: 0.55 }}>• Passive leaderboards calculated hours after completion</div>
+              </div>
+            </motion.div>
+
+            {/* The AlgoClash Combat Style */}
+            <motion.div 
+              initial={{ opacity: 0, x: 16 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5 }}
+              style={{
+                border: '1px solid #052a30',
+                backgroundColor: 'rgba(3,8,10,0.85)',
+                padding: '24px',
+                position: 'relative',
+                boxSizing: 'border-box',
+                boxShadow: '0 0 30px rgba(0,242,254,0.05)',
+                clipPath: 'polygon(0% 0%, 94% 0%, 100% 16px, 100% 100%, 0% 100%)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(0,242,254,0.1)', paddingBottom: '12px', marginBottom: '16px' }}>
+                <span style={{ color: 'var(--accent-cyan)', fontWeight: 'bold', fontSize: '14px' }}>✓</span>
+                <span className="font-display" style={{ fontWeight: 'bold', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.15em', fontSize: '12px' }}>
+                  THE ALGOCLASH FLOW
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-primary)' }}>
+                <div style={{ textShadow: '0 0 4px var(--accent-cyan)' }}>• Symmetrical 1v1 digital combat in compiler sandboxes</div>
+                <div style={{ textShadow: '0 0 4px var(--accent-cyan)' }}>• High-stakes 2-submission limits block generic templates</div>
+                <div style={{ textShadow: '0 0 4px var(--accent-cyan)' }}>• Sensation sways, alarms, and real-time cursor offsets</div>
+                <div style={{ textShadow: '0 0 4px var(--accent-cyan)' }}>• Sibling spectate routing and microsecond-accurate updates</div>
+              </div>
+            </motion.div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* SECTION 5: JOIN THE CLASH */}
+      <section 
+        id="brackets"
+        style={{
+          position: 'relative',
+          zIndex: 10,
+          padding: '80px 5%',
+          backgroundColor: '#000000',
+          borderBottom: '1px solid rgba(255,255,255,0.03)'
+        }}
+      >
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <span style={{ fontSize: '9px', color: 'var(--accent-yellow)', letterSpacing: '0.3em', fontWeight: 'bold' }}>LIVE STAGING AREA</span>
+            <h2 className="font-display font-bold glow-yellow" style={{ fontSize: '32px', color: '#fff', textTransform: 'uppercase', marginTop: '6px' }}>
+              TOURNAMENT #01
+            </h2>
+            <div style={{ width: '80px', height: '2px', backgroundColor: 'var(--accent-yellow)', margin: '12px auto 0 auto' }}></div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <TournamentBracket onSelectLiveMatch={(match) => {
+              onNavigateToArena({
+                username: match.p2,
+                elo: match.elo2 || 1412,
+                avatar: match.p2[0].toUpperCase(),
+                tag: 'LIVE_BRACKET_SPECTATE',
+                lang: 'cpp'
+              });
+            }} />
+          </motion.div>
+
+          {/* Ticket Purchase Card */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.98 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              border: '1px solid var(--accent-yellow)', 
+              backgroundColor: 'rgba(3, 3, 4, 0.95)', 
+              padding: '24px 32px', 
+              marginTop: '40px', 
+              flexWrap: 'wrap', 
+              gap: '24px', 
+              boxShadow: '0 0 30px rgba(255,215,0,0.08)',
+              clipPath: 'polygon(0% 0%, 95% 0%, 100% 16px, 100% 100%, 5% 100%, 0% calc(100% - 16px))'
+            }}
+          >
+            <div style={{ flex: '1', minWidth: '280px' }}>
+              <span className="glow-yellow" style={{ fontSize: '9px', color: 'var(--accent-yellow)', fontWeight: 'bold', letterSpacing: '0.25em' }}>REGISTRATION OPEN</span>
+              <h3 className="font-display font-bold" style={{ fontSize: '20px', color: '#fff', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                ₹50,000 COMBAT MATRIX
+              </h3>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '6px', lineHeight: 1.5, fontFamily: 'var(--font-mono)' }}>
+                64 slots • Double elimination • ₹149 entry buy-in. Tokyo/Seoul/Mumbai staging. Prove your rating.
+              </p>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '200px' }}>
+              <CyberButton variant="warning" size="md" onClick={() => onNavigateToArena(null)}>
+                SECURE ENTRY // ₹149
+              </CyberButton>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                <span>SLOTS: 18/64</span>
+                <span style={{ color: 'var(--accent-crimson)' }}>LIMIT: 36H</span>
+              </div>
+            </div>
+          </motion.div>
+
+        </div>
+      </section>
+
+      {/* SECTION 6: FOOTER */}
+      <footer style={{
+        position: 'relative',
+        zIndex: 10,
+        padding: '64px 5% 40px 5%',
+        borderTop: '1px solid rgba(255,255,255,0.05)',
+        backgroundColor: '#020203',
+        textAlign: 'center'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', gap: '2px', height: '14px', width: '20px' }}>
+            <div style={{ transform: 'rotate(18deg) scale(0.5)', transformOrigin: 'right top' }}>{renderCursor('cyan', true)}</div>
+            <div style={{ transform: 'rotate(-18deg) scale(0.5)', transformOrigin: 'left top' }}>{renderCursor('crimson', false)}</div>
+          </div>
+          <span className="font-display" style={{ fontWeight: '900', fontSize: '20px', letterSpacing: '0.15em', color: '#fff' }}>
+            ALGO<span style={{ color: 'var(--accent-cyan)' }}>CLASH</span>
+          </span>
+        </div>
+        
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', maxWidth: '500px', margin: '0 auto 24px auto', lineHeight: 1.6, fontFamily: 'var(--font-mono)' }}>
+          High-fidelity competitive coding. Prove your ELO in 1v1 digital combat.
+        </p>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '32px', fontFamily: 'var(--font-mono)' }}>
+          <span>STATUS: <b style={{ color: 'var(--accent-cyan)' }}>ACTIVE_SANDBOX_V1</b></span>
+          <span>BUILD: 2026.05.28_V1.4</span>
+          <span>PING: 12MS</span>
+        </div>
+
+        <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+          © 2026 ALGOCLASH. NO COPYRIGHTS RESERVED. TACTICAL COMBAT ZONE.
+        </div>
+      </footer>
+
+    </div>
+  );
+};

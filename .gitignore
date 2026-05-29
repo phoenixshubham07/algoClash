@@ -1,0 +1,27 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Node modules
+node_modules/
+frontend/node_modules/
+
+# Production build outputs
+dist/
+frontend/dist/
+dist-ssr/
+frontend/dist-ssr/
+
+# Local env files
+*.local
+
+# System/Editor files
+.DS_Store
+.vscode/
+.idea/
+.antigravitycli/
+frontend/fix_clashsplash.py
+frontend/fix_clashsplash2.py
+frontend/rewrite_clashsplash.py
+frontend/build_error.log
