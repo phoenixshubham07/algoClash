@@ -529,7 +529,7 @@ export const DashboardPage = () => {
                     Queue status clear. Prepare for high-stakes 1v1 algorithmic combat.
                   </p>
 
-                  <CyberButton variant="primary" size="md" onClick={() => window.location.href = '/'} style={{ width: '100%' }}>
+                  <CyberButton variant="primary" size="md" onClick={() => window.location.href = '/arena'} style={{ width: '100%' }}>
                     ENTER BATTLEFIELD
                   </CyberButton>
                 </div>

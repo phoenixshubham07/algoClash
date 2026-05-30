@@ -97,10 +97,11 @@ if __name__ == '__main__':
 `
 };
 
-export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
+export const ArenaPage = ({ onReturnToHome, initialOpponent = null, isSimulator = false }) => {
   // Navigation / Phase States
   // 'lobby' | 'queuing' | 'roulette' | 'vs_reveal' | 'arena' | 'post_match'
   const [appState, setAppState] = useState('lobby');
+  const simOpponentTimeoutsRef = useRef([]);
   const [matchId, setMatchId] = useState(null);
   const [problem, setProblem] = useState(null);
   const [activeTab, setActiveTab] = useState('code'); // 'description' | 'code'
@@ -200,7 +201,11 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
         const t = setTimeout(() => {
           setVsCountdown(prev => {
             if (prev <= 1) {
-              if (socketRef.current && matchId) {
+              if (isSimulator) {
+                setTimeout(() => {
+                  triggerSimulatedMatchStart();
+                }, 500);
+              } else if (socketRef.current && matchId) {
                 socketRef.current.emit('match:ready', { match_id: matchId, user_id: myStats.id });
               }
               return 0;
@@ -212,13 +217,118 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
         return () => clearTimeout(t);
       }
     }
-  }, [appState, vsCountdown, matchId, myStats.id]);
+  }, [appState, vsCountdown, matchId, myStats.id, isSimulator]);
+
+  const triggerSimulatedMatchStart = () => {
+    const mockProblem = {
+      id: 'prod-product-of-3',
+      title: 'Max Product of 3',
+      description: 'Blitz Format:\n\nGiven an integer array nums, find three numbers whose product is maximum and return the maximum product.\n\nInput Constraints:\n- 3 <= nums.length <= 10^4\n- -1000 <= nums[i] <= 1000\n\nInput Format:\nFirst line: n (array size)\nSecond line: n integers separated by space\n\nOutput Format:\nA single integer representing the maximum product.',
+      difficulty: 'easy',
+      test_cases: [
+        { input: "5\n1 2 3 4 5", output: "60" },
+        { input: "3\n-10 -10 5", output: "500" }
+      ],
+      hidden_cases: Array.from({ length: 12 }, () => ({}))
+    };
+
+    setAppState('arena');
+    setProblem(mockProblem);
+    setTotalCases(12);
+    setSubmissionsLeft(2);
+    setOpponentSubmissionsLeft(2);
+    setMyProgress(0);
+    setOpponentProgress(0);
+    setDangerPulse(false);
+    setLastVerdict(null);
+    setFullscreenViolations(0);
+    setShowWarning(null);
+    setActiveTab('description');
+
+    setMatchTimeRemaining(1800);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setMatchTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          triggerSimulatedMatchEnd('defeat');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    startSimulatedOpponent();
+  };
+
+  const startSimulatedOpponent = () => {
+    simOpponentTimeoutsRef.current.forEach(clearTimeout);
+    simOpponentTimeoutsRef.current = [];
+
+    const cursorInterval = setInterval(() => {
+      setOpponentCursorLine(prev => {
+        const delta = Math.random() > 0.5 ? 1 : -1;
+        return Math.max(1, Math.min(15, prev + delta));
+      });
+      setOpponentStatus('active');
+    }, 3000);
+    simOpponentTimeoutsRef.current.push(cursorInterval);
+
+    const sub1 = setTimeout(() => {
+      setOpponentSubmissionsLeft(1);
+      setOpponentProgress(7);
+      addConsoleLog('warning', `🚨 RIVAL SUBMISSION LOGGED: Passed 7/12 test cases [WA]`);
+    }, 20000);
+    simOpponentTimeoutsRef.current.push(sub1);
+
+    const sub2 = setTimeout(() => {
+      setOpponentSubmissionsLeft(0);
+      setOpponentProgress(12);
+      setDangerPulse(true);
+      addConsoleLog('error', `🔥 CRITICAL DANGER: Rival passed 12/12 test cases! SHIELD DEFENSES FAILING.`);
+      
+      const defeatTimeout = setTimeout(() => {
+        triggerSimulatedMatchEnd('defeat');
+      }, 10000);
+      simOpponentTimeoutsRef.current.push(defeatTimeout);
+    }, 45000);
+    simOpponentTimeoutsRef.current.push(sub2);
+  };
+
+  const triggerSimulatedMatchEnd = (result) => {
+    clearAllSimulations();
+    setMatchResult(result);
+    if (result === 'victory') {
+      playBeep(880, 0.5, 'sine');
+    } else {
+      playBeep(120, 0.8, 'sawtooth');
+    }
+    setAppState('post_match');
+  };
 
   // Establish connection and join matchmaking queue
   const startMatchmaking = () => {
     setAppState('queuing');
     playBeep(440, 0.1, 'square');
     addConsoleLog('system', 'ESTABLISHING SECURE WEBSOCKET TUNNEL...');
+
+    if (isSimulator) {
+      const connectTimeout = setTimeout(() => {
+        addConsoleLog('system', 'CONNECTED TO DIGITALOCEAN BLR-2 DROPLET (SIMULATED)');
+        
+        const matchFoundTimeout = setTimeout(() => {
+          const mockOpponent = RIVAL_POOL[Math.floor(Math.random() * RIVAL_POOL.length)];
+          setOpponent(mockOpponent);
+          setMatchId('simulated-match-id');
+          triggerRoulette(mockOpponent, 'simulated-match-id');
+        }, 1500);
+        
+        simOpponentTimeoutsRef.current.push(matchFoundTimeout);
+      }, 1000);
+      
+      simOpponentTimeoutsRef.current.push(connectTimeout);
+      return;
+    }
 
     if (!socketRef.current) {
       const socket = io(BACKEND_URL);
@@ -403,6 +513,13 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
   const clearAllSimulations = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (oppIdleTimerRef.current) clearTimeout(oppIdleTimerRef.current);
+    if (simOpponentTimeoutsRef.current) {
+      simOpponentTimeoutsRef.current.forEach(id => {
+        clearTimeout(id);
+        clearInterval(id);
+      });
+      simOpponentTimeoutsRef.current = [];
+    }
   };
 
   // Proctoring fullscreen violations checking
@@ -446,6 +563,17 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
   };
 
   const runTestCases = () => {
+    if (isSimulator) {
+      addConsoleLog('system', `⚙️ COMPILING SAMPLE TEST CASES IN ${activeLanguage.toUpperCase()}...`);
+      const t = setTimeout(() => {
+        addConsoleLog('success', `✔ Test Case 1: PASSED (Time: 4ms)`);
+        addConsoleLog('success', `✔ Test Case 2: PASSED (Time: 5ms)`);
+        addConsoleLog('success', '💡 Code compiled successfully. Ready for high-stakes validation.');
+        playBeep(600, 0.2, 'sine');
+      }, 1000);
+      simOpponentTimeoutsRef.current.push(t);
+      return;
+    }
     if (socketRef.current) {
       socketRef.current.emit('testrun', {
         problem_id: problem ? problem.id : 'prod-product-of-3',
@@ -457,6 +585,31 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
 
   const submitSolution = () => {
     if (submissionsLeft <= 0) return;
+    
+    if (isSimulator) {
+      const nextSubmissionsLeft = submissionsLeft - 1;
+      setSubmissionsLeft(nextSubmissionsLeft);
+      addConsoleLog('system', '🚀 DISPATCHING COMPILED PAYLOAD TO JUDGE SERVER...');
+      
+      const t = setTimeout(() => {
+        if (nextSubmissionsLeft === 1) {
+          setMyProgress(10);
+          addConsoleLog('error', `❌ WRONG ANSWER [WA]. Passed 10/12 cases. Attempts left: 1`);
+          playBeep(150, 0.5, 'sawtooth');
+        } else {
+          setMyProgress(12);
+          addConsoleLog('success', `🏆 ACCEPTED [AC]! All 12/12 hidden test cases solved perfectly.`);
+          playBeep(987.77, 0.5, 'sine');
+          const victoryTimeout = setTimeout(() => {
+            triggerSimulatedMatchEnd('victory');
+          }, 1500);
+          simOpponentTimeoutsRef.current.push(victoryTimeout);
+        }
+      }, 1500);
+      simOpponentTimeoutsRef.current.push(t);
+      return;
+    }
+
     if (socketRef.current) {
       socketRef.current.emit('submit', {
         problem_id: problem ? problem.id : 'prod-product-of-3',
@@ -468,6 +621,10 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
 
   const forfeitDuel = () => {
     if (window.confirm("Are you sure you want to forfeit? This will count as an immediate defeat.")) {
+      if (isSimulator) {
+        triggerSimulatedMatchEnd('defeat');
+        return;
+      }
       if (socketRef.current) {
         socketRef.current.emit('match:forfeit');
       }
@@ -510,9 +667,6 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
     <div className="min-h-screen bg-[#0A0B0E] text-slate-100 font-mono relative overflow-hidden flex flex-col justify-between selection:bg-red-500 selection:text-black">
       {/* Absolute Neon Grid Backgrounds */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#14161d_1px,transparent_1px),linear-gradient(to_bottom,#14161d_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-30"></div>
-      
-      {/* Scanline Effect Overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_4px,3px_100%] pointer-events-none z-50"></div>
 
       {/* Retro Cyberpunk Banner Header */}
       <header className="border-b-2 border-[#1E222A] bg-[#0E1015] px-6 py-3 flex items-center justify-between relative z-10">
@@ -761,38 +915,40 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
 
         {/* PHASE STATE 2: MATCHMAKING QUEUE HUD */}
         {appState === 'queuing' && (
-          <div className="max-w-2xl mx-auto border-2 border-[#1E222A] bg-[#0E1015] rounded overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-pulse w-full">
-            <div className="h-2 bg-[repeating-linear-gradient(-45deg,#ffe600,#ffe600_10px,#000_10px,#000_20px)]"></div>
-            
-            <div className="p-8">
-              {/* Spinning Scan Crosshairs */}
-              <div className="flex flex-col items-center justify-center my-12 relative">
-                <div className="w-24 h-24 rounded-full border-4 border-dashed border-[#FF3B30] animate-spin flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full border border-double border-slate-500 animate-pulse"></div>
+          <div className="w-full flex justify-center items-center py-8">
+            <div className="max-w-2xl border-2 border-[#1E222A] bg-[#0E1015] rounded overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-pulse w-full">
+              <div className="h-2 bg-[repeating-linear-gradient(-45deg,#ffe600,#ffe600_10px,#000_10px,#000_20px)]"></div>
+              
+              <div className="p-8">
+                {/* Spinning Scan Crosshairs */}
+                <div className="flex flex-col items-center justify-center my-12 relative">
+                  <div className="w-24 h-24 rounded-full border-4 border-dashed border-[#FF3B30] animate-spin flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full border border-double border-slate-500 animate-pulse"></div>
+                  </div>
+                  <div className="mt-6 text-center">
+                    <h2 className="text-xl font-black tracking-widest text-slate-200 uppercase">SEARCHING FOR OPPONENT...</h2>
+                    <p className="text-xs text-slate-500 mt-1">LOCKING IN MATCH BRACKET / ROUND OF 64</p>
+                  </div>
                 </div>
-                <div className="mt-6 text-center">
-                  <h2 className="text-xl font-black tracking-widest text-slate-200 uppercase">SEARCHING FOR OPPONENT...</h2>
-                  <p className="text-xs text-slate-500 mt-1">LOCKING IN MATCH BRACKET / ROUND OF 64</p>
-                </div>
-              </div>
 
-              {/* Simulated Console Logs inside Frame */}
-              <div className="bg-[#07080B] border border-[#1C2029] p-4 rounded text-xs text-slate-300 font-mono space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[#FF3B30] font-bold">»</span>
-                  <span>INITIATING HANDSHAKE WITH BANGALORE CLUSTERS... SUCCESS</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[#FF3B30] font-bold">»</span>
-                  <span>SEARCHING RANGE (ELO: 1100 - 1300)...</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-emerald-400 font-bold">✔</span>
-                  <span>LOCAL LATENCY VERIFIED // RTT: 12ms</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[#FFE600] font-bold">⚡</span>
-                  <span>AUTHENTICATING SECURE MATCH TOKENS</span>
+                {/* Simulated Console Logs inside Frame */}
+                <div className="bg-[#07080B] border border-[#1C2029] p-4 rounded text-xs text-slate-300 font-mono space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#FF3B30] font-bold">»</span>
+                    <span>INITIATING HANDSHAKE WITH BANGALORE CLUSTERS... SUCCESS</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#FF3B30] font-bold">»</span>
+                    <span>SEARCHING RANGE (ELO: 1100 - 1300)...</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-emerald-400 font-bold">✔</span>
+                    <span>LOCAL LATENCY VERIFIED // RTT: 12ms</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#FFE600] font-bold">⚡</span>
+                    <span>AUTHENTICATING SECURE MATCH TOKENS</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -801,34 +957,36 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
 
         {/* PHASE STATE 3: MATCHMAKER ROULETTE */}
         {appState === 'roulette' && (
-          <div className="max-w-xl mx-auto border-2 border-red-500 bg-[#0E1015] rounded overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.2)] w-full">
-            <div className="h-2 bg-red-600"></div>
-            
-            <div className="p-8 text-center">
-              <span className="text-xs text-red-500 font-bold tracking-widest uppercase">// SECURED DUEL ASSIGNMENT //</span>
-              <h2 className="text-2xl font-black tracking-tight text-white mt-1 mb-10">LOCKING ON COMBATANT</h2>
+          <div className="w-full flex justify-center items-center py-8">
+            <div className="max-w-xl border-2 border-red-500 bg-[#0E1015] rounded overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.2)] w-full">
+              <div className="h-2 bg-red-600"></div>
               
-              {/* Roulette Wheel Screen Container */}
-              <div className="bg-black border border-red-500/50 rounded-lg p-6 my-8 relative overflow-hidden flex flex-col items-center justify-center min-h-[140px]">
+              <div className="p-8 text-center">
+                <span className="text-xs text-red-500 font-bold tracking-widest uppercase">// SECURED DUEL ASSIGNMENT //</span>
+                <h2 className="text-2xl font-black tracking-tight text-white mt-1 mb-10">LOCKING ON COMBATANT</h2>
                 
-                {/* Horizontal scanner bar */}
-                <div className="absolute inset-x-0 h-0.5 bg-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.8)] z-10 animate-scan pointer-events-none"></div>
-                
-                {/* Visual arrow guides */}
-                <div className="absolute top-1/2 left-3 -translate-y-1/2 text-red-500 font-bold text-lg animate-pulse">▶</div>
-                <div className="absolute top-1/2 right-3 -translate-y-1/2 text-red-500 font-bold text-lg rotate-180 animate-pulse">▶</div>
+                {/* Roulette Wheel Screen Container */}
+                <div className="bg-black border border-red-500/50 rounded-lg p-6 my-8 relative overflow-hidden flex flex-col items-center justify-center min-h-[140px]">
+                  
+                  {/* Horizontal scanner bar */}
+                  <div className="absolute inset-x-0 h-0.5 bg-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.8)] z-10 animate-scan pointer-events-none"></div>
+                  
+                  {/* Visual arrow guides */}
+                  <div className="absolute top-1/2 left-3 -translate-y-1/2 text-red-500 font-bold text-lg animate-pulse">▶</div>
+                  <div className="absolute top-1/2 right-3 -translate-y-1/2 text-red-500 font-bold text-lg rotate-180 animate-pulse">▶</div>
 
-                <div className="text-3xl md:text-4xl font-black tracking-widest text-[#FF3B30] uppercase filter drop-shadow-[0_0_8px_rgba(255,59,48,0.5)]">
-                  {spinName}
+                  <div className="text-3xl md:text-4xl font-black tracking-widest text-[#FF3B30] uppercase filter drop-shadow-[0_0_8px_rgba(255,59,48,0.5)]">
+                    {spinName}
+                  </div>
+                  
+                  <div className="text-[10px] text-slate-500 uppercase mt-3 tracking-widest">
+                    DECRYPTION ALGORITHM ACTIVE // RE-ALIGNING INDEXES
+                  </div>
                 </div>
-                
-                <div className="text-[10px] text-slate-500 uppercase mt-3 tracking-widest">
-                  DECRYPTION ALGORITHM ACTIVE // RE-ALIGNING INDEXES
-                </div>
-              </div>
 
-              <div className="text-xs text-slate-400">
-                Determining matching opponent utilizing balanced ELO-seeding indices...
+                <div className="text-xs text-slate-400">
+                  Determining matching opponent utilizing balanced ELO-seeding indices...
+                </div>
               </div>
             </div>
           </div>
@@ -836,71 +994,73 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
 
         {/* PHASE STATE 4: VS REVEAL SCREEN */}
         {appState === 'vs_reveal' && (
-          <div className="max-w-4xl mx-auto animate-fadeIn relative w-full">
-            
-            {/* Massive VS Title Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[140px] md:text-[220px] font-black tracking-tighter text-slate-900/10 uppercase select-none pointer-events-none font-sans">
-              VS
-            </div>
-
-            {/* Split Dual Card Animation */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative z-10">
+          <div className="w-full flex justify-center items-center py-8">
+            <div className="max-w-4xl animate-fadeIn relative w-full">
               
-              {/* Player 1 Card (Our Side) - Slides in Left */}
-              <div className="border-2 border-red-500 bg-[#0E1015] rounded-xl p-8 shadow-[0_0_30px_rgba(239,68,68,0.15)] flex flex-col justify-between min-h-[280px]">
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] bg-red-500 text-black px-2 py-0.5 rounded font-bold uppercase tracking-wider">CHALLENGER</span>
-                    <span className="text-xl">{myStats.flag}</span>
-                  </div>
-                  
-                  <h3 className="text-3xl font-black tracking-wider text-white mt-2 mb-1">{myStats.username}</h3>
-                  <div className="text-lg font-black text-[#FFE600] flex items-center gap-1.5 mt-2">
-                    <Trophy size={18} />
-                    <span>{myStats.elo} ELO</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-[#1C2029] pt-4 mt-6">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-widest">ESTIMATED STRETCH EXPECTATION</div>
-                  <div className="text-xs text-emerald-400 mt-1">BASE ADVANTAGE (+18 ELO EXPECTANCY)</div>
-                </div>
+              {/* Massive VS Title Glow */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[140px] md:text-[220px] font-black tracking-tighter text-slate-900/10 uppercase select-none pointer-events-none font-sans">
+                VS
               </div>
 
-              {/* Player 2 Card (Opponent Side) - Slides in Right */}
-              <div className="border-2 border-yellow-500 bg-[#0E1015] rounded-xl p-8 shadow-[0_0_30px_rgba(245,158,11,0.15)] flex flex-col justify-between min-h-[280px]">
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] bg-yellow-400 text-black px-2 py-0.5 rounded font-bold uppercase tracking-wider">RIVAL DEFENDER</span>
-                    <span className="text-xl">{opponent.flag}</span>
+              {/* Split Dual Card Animation */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative z-10">
+                
+                {/* Player 1 Card (Our Side) - Slides in Left */}
+                <div className="border-2 border-red-500 bg-[#0E1015] rounded-xl p-8 shadow-[0_0_30px_rgba(239,68,68,0.15)] flex flex-col justify-between min-h-[280px]">
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-[10px] bg-red-500 text-black px-2 py-0.5 rounded font-bold uppercase tracking-wider">CHALLENGER</span>
+                      <span className="text-xl">{myStats.flag}</span>
+                    </div>
+                    
+                    <h3 className="text-3xl font-black tracking-wider text-white mt-2 mb-1">{myStats.username}</h3>
+                    <div className="text-lg font-black text-[#FFE600] flex items-center gap-1.5 mt-2">
+                      <Trophy size={18} />
+                      <span>{myStats.elo} ELO</span>
+                    </div>
                   </div>
-                  
-                  <h3 className="text-3xl font-black tracking-wider text-white mt-2 mb-1">{opponent.username}</h3>
-                  <div className="text-lg font-black text-[#FFE600] flex items-center gap-1.5 mt-2">
-                    <Trophy size={18} />
-                    <span>{opponent.elo} ELO</span>
+
+                  <div className="border-t border-[#1C2029] pt-4 mt-6">
+                    <div className="text-[10px] text-slate-500 uppercase tracking-widest">ESTIMATED STRETCH EXPECTATION</div>
+                    <div className="text-xs text-emerald-400 mt-1">BASE ADVANTAGE (+18 ELO EXPECTANCY)</div>
                   </div>
                 </div>
 
-                <div className="border-t border-[#1C2029] pt-4 mt-6">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-widest">RIVAL METRIC SPECS</div>
-                  <div className="text-xs text-red-400 mt-1">CLUTCH THREAT LEVEL: EXTREME</div>
+                {/* Player 2 Card (Opponent Side) - Slides in Right */}
+                <div className="border-2 border-yellow-500 bg-[#0E1015] rounded-xl p-8 shadow-[0_0_30px_rgba(245,158,11,0.15)] flex flex-col justify-between min-h-[280px]">
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-[10px] bg-yellow-400 text-black px-2 py-0.5 rounded font-bold uppercase tracking-wider">RIVAL DEFENDER</span>
+                      <span className="text-xl">{opponent.flag}</span>
+                    </div>
+                    
+                    <h3 className="text-3xl font-black tracking-wider text-white mt-2 mb-1">{opponent.username}</h3>
+                    <div className="text-lg font-black text-[#FFE600] flex items-center gap-1.5 mt-2">
+                      <Trophy size={18} />
+                      <span>{opponent.elo} ELO</span>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[#1C2029] pt-4 mt-6">
+                    <div className="text-[10px] text-slate-500 uppercase tracking-widest">RIVAL METRIC SPECS</div>
+                    <div className="text-xs text-red-400 mt-1">CLUTCH THREAT LEVEL: EXTREME</div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Bottom Centered Visual Timer Bar */}
+              <div className="flex flex-col items-center mt-12 text-center">
+                <div className="text-xs font-black text-[#FF3B30] tracking-widest uppercase mb-2">🧬 PREPARING SECURE SANDBOX COMPILATION 🧬</div>
+                <div className="text-5xl font-black text-white filter drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">
+                  {vsCountdown}
+                </div>
+                <div className="w-64 h-1 bg-slate-800 rounded-full mt-4 overflow-hidden relative">
+                  <div className="h-full bg-[#FF3B30] rounded-full animate-loader duration-3000"></div>
                 </div>
               </div>
 
             </div>
-
-            {/* Bottom Centered Visual Timer Bar */}
-            <div className="flex flex-col items-center mt-12 text-center">
-              <div className="text-xs font-black text-[#FF3B30] tracking-widest uppercase mb-2">🧬 PREPARING SECURE SANDBOX COMPILATION 🧬</div>
-              <div className="text-5xl font-black text-white filter drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">
-                {vsCountdown}
-              </div>
-              <div className="w-64 h-1 bg-slate-800 rounded-full mt-4 overflow-hidden relative">
-                <div className="h-full bg-[#FF3B30] rounded-full animate-loader duration-3000"></div>
-              </div>
-            </div>
-
           </div>
         )}
 
@@ -1095,19 +1255,12 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
                   </div>
                 ) : (
                   <div className="flex-1 font-mono text-xs md:text-sm relative overflow-hidden bg-[#07080B] border border-[#171B24] rounded p-3 text-slate-300 flex">
-                    {/* Line numbers column */}
-                    <div className="text-slate-600 text-right pr-4 select-none border-r border-[#171B24] space-y-0.5">
-                      {Array.from({ length: 22 }, (_, i) => (
-                        <div key={i}>{i + 1}</div>
-                      ))}
-                    </div>
-
                     {/* Pseudo Editable Area */}
                     <textarea 
                       value={userCode}
                       onChange={handleCodeChange}
                       spellCheck="false"
-                      className="flex-1 h-full pl-4 bg-transparent outline-none border-none resize-none overflow-y-auto leading-relaxed focus:ring-0 text-emerald-400 font-mono text-xs md:text-sm"
+                      className="flex-1 h-full bg-transparent outline-none border-none resize-none overflow-y-auto leading-relaxed focus:ring-0 text-emerald-400 font-mono text-xs md:text-sm"
                     ></textarea>
 
                     {/* Ghost cursor simulation indicator overlay */}

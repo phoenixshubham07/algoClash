@@ -99,10 +99,10 @@ body {
   z-index: 9999;
   background: linear-gradient(
     rgba(18, 16, 16, 0) 50%, 
-    rgba(0, 0, 0, 0.22) 50%
+    rgba(0, 0, 0, 0.1) 50%
   );
   background-size: 100% 4px;
-  opacity: 0.35;
+  opacity: 0.04;
 }
 
 /* Red Pulse CSS Vignette */

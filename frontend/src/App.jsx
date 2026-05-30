@@ -20,6 +20,22 @@ function App() {
   );
   const [view, setView] = useState('landing'); // landing | arena
   const [initialOpponent, setInitialOpponent] = useState(null);
+  const [isSimulator, setIsSimulator] = useState(false);
+
+  // Check for path-based routing for real connected arena page
+  if (window.location.pathname === '/arena') {
+    return (
+      <>
+        <CyberCursor />
+        <ArenaPage 
+          onReturnToHome={() => {
+            window.location.href = '/dashboard';
+          }} 
+          isSimulator={false} 
+        />
+      </>
+    );
+  }
 
   // Check for path-based routing for different league scroll redesign page
   if (window.location.pathname === '/redesign') {
@@ -103,12 +119,14 @@ function App() {
 
   const handleRouteToArena = (opponentData = null) => {
     setInitialOpponent(opponentData);
+    setIsSimulator(true); // Entering arena from public landing page triggers simulator
     setView('arena');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleRouteToHome = () => {
     setInitialOpponent(null);
+    setIsSimulator(false);
     setView('landing');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -128,6 +146,7 @@ function App() {
         <ArenaPage 
           onReturnToHome={handleRouteToHome} 
           initialOpponent={initialOpponent}
+          isSimulator={isSimulator}
         />
       )}
       {showSplash && (

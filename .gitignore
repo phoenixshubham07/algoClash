@@ -35,3 +35,4 @@ UIformatchmakingandingame
 .env.local
 .env.*
 *.local
+.vercel

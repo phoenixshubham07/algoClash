@@ -6,6 +6,200 @@ import { TournamentBracket } from './TournamentBracket';
 import { InteractiveBackground } from './InteractiveBackground';
 import { LogoWordmark } from './LogoWordmark';
 
+// Interactive Hexagonal Radar / Skill Chart component for tactical specs comparison
+const HexagonalSkillChart = ({ metrics, accentColor, isDeficit }) => {
+  const cx = 110;
+  const cy = 110;
+  const radius = 68; // Slightly smaller to prevent text boundary overflows and support responsiveness
+
+  const getHexPoint = (xCenter, yCenter, r, index, total = 6) => {
+    // Offset by -Math.PI / 2 to make vertex 0 point straight UP
+    const angle = (index * 2 * Math.PI) / total - Math.PI / 2;
+    const x = xCenter + r * Math.cos(angle);
+    const y = yCenter + r * Math.sin(angle);
+    return { x, y };
+  };
+
+  // Build the data polygon points
+  const points = metrics.map((m, idx) => {
+    const r = (m.value / 100) * radius;
+    const { x, y } = getHexPoint(cx, cy, r, idx);
+    return `${x},${y}`;
+  }).join(' ');
+
+  const fillColor = isDeficit 
+    ? 'rgba(244, 63, 94, 0.08)' 
+    : `${accentColor === 'var(--accent-cyan)' ? 'rgba(0, 242, 254, 0.12)' : accentColor === 'var(--accent-crimson)' ? 'rgba(244, 63, 94, 0.12)' : 'rgba(255, 215, 0, 0.12)'}`;
+  const strokeColor = isDeficit ? 'var(--accent-crimson)' : accentColor;
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      margin: '8px auto',
+      width: '100%',
+      maxWidth: '300px'
+    }}>
+      <svg width="250" height="250" viewBox="0 0 220 220" style={{ overflow: 'visible' }}>
+        {/* Glow Filters */}
+        <defs>
+          <filter id="glow-advantage" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="5" result="blur" />
+            <feComponentTransfer in="blur" result="boost">
+              <feFuncA type="linear" slope="1.4" />
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode in="boost" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <filter id="glow-deficit" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Draw background concentric hexagons */}
+        {[0.25, 0.5, 0.75, 1.0].map((level, lIdx) => {
+          const hexPoints = Array.from({ length: 6 }).map((_, i) => {
+            const { x, y } = getHexPoint(cx, cy, radius * level, i);
+            return `${x},${y}`;
+          }).join(' ');
+          return (
+            <g key={lIdx}>
+              <polygon
+                points={hexPoints}
+                fill="none"
+                stroke={level === 1.0 ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.035)"}
+                strokeWidth={level === 1.0 ? "1.2" : "0.5"}
+                strokeDasharray={level === 1.0 ? "none" : "3, 3"}
+              />
+              {/* Subtle High-tech grid axis level percentages */}
+              {level > 0.2 && (
+                <text
+                  x={cx + 5}
+                  y={cy - radius * level + 2.5}
+                  fill="rgba(255, 255, 255, 0.2)"
+                  fontSize="6.5px"
+                  fontFamily="var(--font-mono)"
+                  fontWeight="bold"
+                >
+                  {Math.round(level * 100)}%
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* Draw axis line vectors from center to vertices */}
+        {Array.from({ length: 6 }).map((_, i) => {
+          const pOuter = getHexPoint(cx, cy, radius, i);
+          return (
+            <line
+              key={i}
+              x1={cx}
+              y1={cy}
+              x2={pOuter.x}
+              y2={pOuter.y}
+              stroke="rgba(255, 255, 255, 0.04)"
+              strokeWidth="0.8"
+            />
+          );
+        })}
+
+        {/* Draw the filled skill profile polygon */}
+        {metrics.length > 0 && (
+          <polygon
+            points={points}
+            fill={fillColor}
+            stroke={strokeColor}
+            strokeWidth="2.2"
+            filter={isDeficit ? 'url(#glow-deficit)' : 'url(#glow-advantage)'}
+            style={{ transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}
+          />
+        )}
+
+        {/* Draw pulsing coordinate dots on polygon vertices */}
+        {metrics.map((m, idx) => {
+          const r = (m.value / 100) * radius;
+          const { x, y } = getHexPoint(cx, cy, r, idx);
+          return (
+            <g key={idx}>
+              {/* Pulsing subtle rings on the dots */}
+              <circle
+                cx={x}
+                cy={y}
+                r="5.5"
+                fill="none"
+                stroke={strokeColor}
+                strokeWidth="0.5"
+                opacity="0.35"
+                style={{ 
+                  transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                  animation: 'pulse 1.5s infinite ease-in-out'
+                }}
+              />
+              <circle
+                cx={x}
+                cy={y}
+                r="3.2"
+                fill={strokeColor}
+                stroke="#020203"
+                strokeWidth="1.2"
+                style={{ transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}
+              />
+            </g>
+          );
+        })}
+
+        {/* Label outer vertices with gorgeous scifi typography */}
+        {metrics.map((m, idx) => {
+          const labelDist = radius + 16; // Larger spacing to prevent overlapping
+          const { x, y } = getHexPoint(cx, cy, labelDist, idx);
+          
+          let textAnchor = "middle";
+          if (x > cx + 10) textAnchor = "start";
+          if (x < cx - 10) textAnchor = "end";
+
+          // Calculate precise offsets for perfect vertical text alignment
+          let dyOffset = 3;
+          if (idx === 0) dyOffset = -2; // Push top vertex text up
+          if (idx === 3) dyOffset = 8;  // Push bottom vertex text down
+
+          // Styling labels
+          const labelColor = isDeficit ? 'rgba(244, 63, 94, 0.75)' : '#f8fafc';
+          const valColor = isDeficit ? 'rgba(244, 63, 94, 0.95)' : accentColor;
+
+          return (
+            <text
+              key={idx}
+              x={x}
+              y={y + dyOffset} 
+              fill={labelColor}
+              fontSize="8px"
+              fontWeight="bold"
+              fontFamily="var(--font-mono)"
+              textAnchor={textAnchor}
+              style={{ letterSpacing: '0.08em' }}
+            >
+              {m.name} 
+              <tspan fill={valColor} fontWeight="900" dx="3px">
+                [{m.value}%]
+              </tspan>
+            </text>
+          );
+        })}
+      </svg>
+    </div>
+  );
+};
+
 export const LandingPage = ({ onNavigateToArena }) => {
   const [activeCompareTab, setActiveCompareTab] = useState('leetcode');
   const [scrolled, setScrolled] = useState(false);
@@ -13,28 +207,24 @@ export const LandingPage = ({ onNavigateToArena }) => {
   const [activeSection, setActiveSection] = useState('logo-fold');
   const [isLogoHovered, setIsLogoHovered] = useState(false);
 
+  // Dynamic system telemetry clock
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 120) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+      const scrollY = window.scrollY;
+      setScrolled(scrollY > 50);
 
-      // Scroll Spy to track current visible section
+      // Simple active section check based on scroll
       const sections = ['logo-fold', 'tech-moat', 'ui-preview', 'combat-contrast'];
-      let currentSection = 'logo-fold';
-      
-      for (const section of sections) {
-        const el = document.getElementById(section);
+      for (const sectionId of sections) {
+        const el = document.getElementById(sectionId);
         if (el) {
           const rect = el.getBoundingClientRect();
-          if (rect.top <= window.innerHeight * 0.45) {
-            currentSection = section;
+          if (rect.top <= 200 && rect.bottom >= 200) {
+            setActiveSection(sectionId);
+            break;
           }
         }
       }
-      setActiveSection(currentSection);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -53,9 +243,12 @@ export const LandingPage = ({ onNavigateToArena }) => {
       deficit: {
         title: "LEETCODE DEFICITS",
         metrics: [
-          { name: "REAL-TIME INTERACTION", value: 15 },
-          { name: "ANTI-CHEAT PROCTORING", value: 10 },
-          { name: "COMBAT TENSION", value: 0 }
+          { name: "REAL-TIME SYNC", value: 15 },
+          { name: "PROCTOR SHIELD", value: 10 },
+          { name: "COMBAT TENSION", value: 0 },
+          { name: "COMPILE SPEED", value: 40 },
+          { name: "SPECTATOR FEED", value: 0 },
+          { name: "SANDBOX PROCT", value: 20 }
         ],
         logs: [
           "Blind compiling against silent databases",
@@ -66,9 +259,12 @@ export const LandingPage = ({ onNavigateToArena }) => {
       advantage: {
         title: "ALGOCLASH SYSTEMS",
         metrics: [
-          { name: "CLASH SYMMETRIC ENGAGEMENT", value: 100 },
-          { name: "POSTGRES KEYSTROKE PROCTOR", value: 99 },
-          { name: "COMPILER PRESSURE WAVE", value: 95 }
+          { name: "REAL-TIME SYNC", value: 100 },
+          { name: "PROCTOR SHIELD", value: 99 },
+          { name: "COMBAT TENSION", value: 95 },
+          { name: "COMPILE SPEED", value: 96 },
+          { name: "SPECTATOR FEED", value: 98 },
+          { name: "SANDBOX PROCT", value: 99 }
         ],
         logs: [
           "Live opponent ghost cursor offset tracking",
@@ -86,9 +282,12 @@ export const LandingPage = ({ onNavigateToArena }) => {
       deficit: {
         title: "CODEFORCES DEFICITS",
         metrics: [
-          { name: "VISUAL TELEMETRY", value: 5 },
-          { name: "SPECTATOR ACCESS", value: 12 },
-          { name: "HUD ENGAGEMENT", value: 8 }
+          { name: "REAL-TIME SYNC", value: 5 },
+          { name: "PROCTOR SHIELD", value: 12 },
+          { name: "COMBAT TENSION", value: 8 },
+          { name: "COMPILE SPEED", value: 30 },
+          { name: "SPECTATOR FEED", value: 10 },
+          { name: "SANDBOX PROCT", value: 15 }
         ],
         logs: [
           "Cold, static table-based scoreboard systems",
@@ -99,9 +298,12 @@ export const LandingPage = ({ onNavigateToArena }) => {
       advantage: {
         title: "ALGOCLASH SYSTEMS",
         metrics: [
-          { name: "LIVE TOURNAMENT BRACKETS", value: 100 },
-          { name: "SPECTATOR HUDS & RADAR", value: 98 },
-          { name: "IMPACT SHOCKWAVE SFX", value: 92 }
+          { name: "REAL-TIME SYNC", value: 100 },
+          { name: "PROCTOR SHIELD", value: 98 },
+          { name: "COMBAT TENSION", value: 92 },
+          { name: "COMPILE SPEED", value: 97 },
+          { name: "SPECTATOR FEED", value: 98 },
+          { name: "SANDBOX PROCT", value: 99 }
         ],
         logs: [
           "Sleek visual tournament double-elim brackets",
@@ -119,9 +321,12 @@ export const LandingPage = ({ onNavigateToArena }) => {
       deficit: {
         title: "GENERIC EXAM DEFICITS",
         metrics: [
-          { name: "TAMPER SHIELD PROTECTION", value: 5 },
-          { name: "MECHANICAL CODE SWAY", value: 20 },
-          { name: "LOG TELEMETRY DENSITY", value: 15 }
+          { name: "REAL-TIME SYNC", value: 20 },
+          { name: "PROCTOR SHIELD", value: 5 },
+          { name: "COMBAT TENSION", value: 10 },
+          { name: "COMPILE SPEED", value: 45 },
+          { name: "SPECTATOR FEED", value: 15 },
+          { name: "SANDBOX PROCT", value: 8 }
         ],
         logs: [
           "Vulnerable to copy-paste ChatGPT injection",
@@ -132,9 +337,12 @@ export const LandingPage = ({ onNavigateToArena }) => {
       advantage: {
         title: "ALGOCLASH SYSTEMS",
         metrics: [
-          { name: "INTELLIGENT TAB-LOCK SHIELD", value: 100 },
-          { name: "KEYSTROKE RHYTHM METRIC", value: 98 },
-          { name: "SECURE POSTGRES SANDBOX", value: 99 }
+          { name: "REAL-TIME SYNC", value: 100 },
+          { name: "PROCTOR SHIELD", value: 98 },
+          { name: "COMBAT TENSION", value: 95 },
+          { name: "COMPILE SPEED", value: 96 },
+          { name: "SPECTATOR FEED", value: 98 },
+          { name: "SANDBOX PROCT", value: 99 }
         ],
         logs: [
           "Mandated browser focus proctor lock system",
@@ -144,6 +352,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
       }
     }
   };
+
   // Programmatic 12x17 Classic Retro Cursors (image_0aeeab.png Matrix Map)
   const classicCursorGrid = [
     [1,1,0,0,0,0,0,0,0,0,0,0],
@@ -904,8 +1113,6 @@ export const LandingPage = ({ onNavigateToArena }) => {
               boxShadow: `0 12px 40px rgba(0,0,0,0.9), 0 0 30px ${comparisonData[activeCompareTab].accent}1a`,
               clipPath: 'polygon(0% 0%, 97% 0%, 100% 24px, 100% 100%, 3% 100%, 0% calc(100% - 24px))',
               transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
               boxSizing: 'border-box'
             }}
             className="grid grid-cols-1 md:grid-cols-2"
@@ -931,15 +1138,17 @@ export const LandingPage = ({ onNavigateToArena }) => {
             </div>
 
             {/* Left Column: Target Deficits (Red themed) */}
-            <div style={{
-              padding: '40px',
-              backgroundColor: 'rgba(244, 63, 94, 0.01)',
-              borderRight: '1px solid rgba(255,255,255,0.04)',
-              position: 'relative',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '24px'
-            }}>
+            <div 
+              style={{
+                padding: '40px',
+                backgroundColor: 'rgba(244, 63, 94, 0.01)',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '24px'
+              }}
+              className="border-b md:border-b-0 md:border-r border-[rgba(255,255,255,0.04)]"
+            >
               {/* Scanline sweep */}
               <div className="scanner-beam-red" style={{ opacity: 0.05 }} />
 
@@ -950,35 +1159,18 @@ export const LandingPage = ({ onNavigateToArena }) => {
                 </h3>
               </div>
 
-              {/* Deficit metrics */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {comparisonData[activeCompareTab].deficit.metrics.map((m, idx) => (
-                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-                      <span>{m.name}</span>
-                      <span style={{ color: 'var(--accent-crimson)' }}>{m.value}%</span>
-                    </div>
-                    {/* Progress track */}
-                    <div style={{ height: '4px', backgroundColor: '#100a0b', position: 'relative' }}>
-                      <div 
-                        style={{ 
-                          width: `${m.value}%`, 
-                          height: '100%', 
-                          backgroundColor: 'var(--accent-crimson)',
-                          boxShadow: '0 0 8px rgba(244, 63, 94, 0.5)'
-                        }}
-                        className="metric-bar-fill"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {/* Deficit metrics: Hexagonal Skill Chart */}
+              <HexagonalSkillChart
+                metrics={comparisonData[activeCompareTab].deficit.metrics}
+                accentColor="var(--accent-crimson)"
+                isDeficit={true}
+              />
 
               {/* Deficit Logs */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px', borderTop: '1px solid rgba(244,63,94,0.1)', paddingTop: '20px' }}>
-                <span style={{ fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '0.2em' }}>DETECTOR_LOGS // STAGNANT</span>
+                <span style={{ fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '0.2em', fontFamily: 'var(--font-mono)' }}>DETECTOR_LOGS // STAGNANT</span>
                 {comparisonData[activeCompareTab].deficit.logs.map((log, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                  <div key={idx} style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.5', fontFamily: 'var(--font-mono)' }}>
                     <span style={{ color: 'var(--accent-crimson)' }}>✗</span>
                     <span>{log}</span>
                   </div>
@@ -1005,35 +1197,18 @@ export const LandingPage = ({ onNavigateToArena }) => {
                 </h3>
               </div>
 
-              {/* Advantage metrics */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {comparisonData[activeCompareTab].advantage.metrics.map((m, idx) => (
-                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#fff', letterSpacing: '0.1em' }}>
-                      <span>{m.name}</span>
-                      <span style={{ color: comparisonData[activeCompareTab].accent, fontWeight: 'bold' }}>{m.value === 95 || m.value === 92 ? 'MAX' : `${m.value}%`}</span>
-                    </div>
-                    {/* Progress track */}
-                    <div style={{ height: '4px', backgroundColor: '#071518', position: 'relative' }}>
-                      <div 
-                        style={{ 
-                          width: `${m.value}%`, 
-                          height: '100%', 
-                          backgroundColor: comparisonData[activeCompareTab].accent,
-                          boxShadow: `0 0 8px ${comparisonData[activeCompareTab].accent}`
-                        }}
-                        className="metric-bar-fill"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {/* Advantage metrics: Hexagonal Skill Chart */}
+              <HexagonalSkillChart
+                metrics={comparisonData[activeCompareTab].advantage.metrics}
+                accentColor={comparisonData[activeCompareTab].accent}
+                isDeficit={false}
+              />
 
               {/* Advantage Logs */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px', borderTop: `1px solid ${comparisonData[activeCompareTab].accent}22`, paddingTop: '20px' }}>
-                <span style={{ fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '0.2em' }}>ACTIVE_MATRIX // COMBAT_INTELLIGENCE</span>
+                <span style={{ fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '0.2em', fontFamily: 'var(--font-mono)' }}>ACTIVE_MATRIX // COMBAT_INTELLIGENCE</span>
                 {comparisonData[activeCompareTab].advantage.logs.map((log, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--text-primary)', lineHeight: '1.5' }}>
+                  <div key={idx} style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--text-primary)', lineHeight: '1.5', fontFamily: 'var(--font-mono)' }}>
                     <span style={{ color: comparisonData[activeCompareTab].accent }}>✓</span>
                     <span>{log}</span>
                   </div>
