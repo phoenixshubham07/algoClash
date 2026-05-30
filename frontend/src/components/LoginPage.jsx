@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
+import { InteractiveBackground } from './InteractiveBackground';
 
 export const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -112,6 +113,7 @@ export const LoginPage = () => {
       overflow: 'hidden',
       fontFamily: "'Space Grotesk', sans-serif"
     }}>
+      <InteractiveBackground />
       {/* Background Coding Grid Layer */}
       <div style={{
         position: 'absolute',
@@ -455,41 +457,6 @@ export const LoginPage = () => {
             </svg>
             ⚡ AUTH_PROVIDER: GOOGLE
           </button>
-
-          {/* REALTIME SYSTEM AUTHENTICATION LOGS */}
-          <div style={{ marginTop: '28px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '6px', marginBottom: '8px' }}>
-              <span>CONSOLE LOGS</span>
-              <span>PORT // 4433</span>
-            </div>
-            
-            <div style={{
-              height: '80px',
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              border: '1px solid rgba(255,255,255,0.03)',
-              borderRadius: '4px',
-              padding: '8px 12px',
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
-              boxSizing: 'border-box'
-            }}>
-              {statusLogs.map((log, idx) => (
-                <div key={idx} style={{
-                  fontSize: '8.5px',
-                  fontFamily: 'var(--font-mono)',
-                  color: log.includes('🚨') ? 'var(--accent-crimson)' : log.includes('🟢') || log.includes('🚀') ? '#22d3ee' : '#94a3b8',
-                  letterSpacing: '0.025em',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {log}
-                </div>
-              ))}
-            </div>
-          </div>
           
         </motion.div>
 

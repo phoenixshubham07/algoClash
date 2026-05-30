@@ -4,6 +4,7 @@ import { LandingPage } from './components/LandingPage';
 import { ArenaPage } from './components/ArenaPage';
 import { WordmarkTestPage } from './components/WordmarkTestPage';
 import { LoginPage } from './components/LoginPage';
+import { OnboardingPage } from './components/OnboardingPage';
 import { DashboardPage } from './components/DashboardPage';
 import { BrandIdentityPage } from './components/BrandIdentityPage';
 import { CyberCursor } from './components/CyberCursor';
@@ -45,6 +46,16 @@ function App() {
       <>
         <CyberCursor />
         <DashboardPage />
+      </>
+    );
+  }
+
+  // Check for path-based routing for profile setup onboarding page
+  if (window.location.pathname === '/setup-profile') {
+    return (
+      <>
+        <CyberCursor />
+        <OnboardingPage />
       </>
     );
   }

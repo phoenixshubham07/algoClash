@@ -1,51 +1,245 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CyberButton } from './CyberButton';
+import { InteractiveBackground } from './InteractiveBackground';
 import { supabase } from '../supabaseClient';
 
+const AVATARS = [
+  { id: 'toxic_code', name: 'TOXIC_CODE', icon: '☣️', color: 'var(--accent-cyan)', glow: 'rgba(0, 242, 254, 0.4)' },
+  { id: 'neon_skull', name: 'NEON_SKULL', icon: '💀', color: 'var(--accent-crimson)', glow: 'rgba(244, 63, 94, 0.4)' },
+  { id: 'matrix_eye', name: 'MATRIX_EYE', icon: '🔮', color: '#a855f7', glow: 'rgba(168, 85, 247, 0.4)' },
+  { id: 'mech_drone', name: 'MECH_DRONE', icon: '🤖', color: '#3b82f6', glow: 'rgba(59, 130, 246, 0.4)' },
+  { id: 'volt_strike', name: 'VOLT_STRIKE', icon: '⚡', color: 'var(--accent-yellow)', glow: 'rgba(255, 215, 0, 0.4)' },
+  { id: 'biotic_core', name: 'BIOTIC_CORE', icon: '🧬', color: '#ec4899', glow: 'rgba(236, 72, 153, 0.4)' },
+];
+
 export const DashboardPage = () => {
-  const [username, setUsername] = useState('AGENT_UNKNOWN');
+  // Active User Profile
+  const [username, setUsername] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [avatarId, setAvatarId] = useState('toxic_code');
   const [sessionUser, setSessionUser] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  // Tabs / Navigation
+  const [isEditing, setIsEditing] = useState(false); // false = stats dashboard, true = settings
+
+  // Settings Edit State
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editUsername, setEditUsername] = useState('');
+  const [editAvatarId, setEditAvatarId] = useState('toxic_code');
+  const [settingsError, setSettingsError] = useState('');
+  const [settingsSuccess, setSettingsSuccess] = useState('');
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  // Account Deletion State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+
   const [systemLogs, setSystemLogs] = useState([
     '⚡ [INIT] CORE CONSOLE SECURED.',
     '🟢 [SYS] WELCOME TO THE DUEL COMMAND DECK.'
   ]);
 
-  // Load username from localStorage or Supabase session
+  // Load and check profile on mount
   useEffect(() => {
-    // 1. Check local storage (from mock login form)
-    const savedUser = localStorage.getItem('algoclash_username');
-    if (savedUser) {
-      setUsername(savedUser.toUpperCase());
-    }
+    const checkProfileAndLoad = async () => {
+      let currentUsername = localStorage.getItem('algoclash_username');
+      let currentDisplayName = localStorage.getItem('algoclash_display_name');
+      let currentAvatar = localStorage.getItem('algoclash_avatar') || 'toxic_code';
 
-    // 2. Check Supabase OAuth session
-    const getSupabaseSession = async () => {
+      let isSupabaseLoaded = false;
+      let sessionUserInstance = null;
+
       if (supabase && supabase.auth) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
+          sessionUserInstance = session.user;
           setSessionUser(session.user);
-          const emailPrefix = session.user.email ? session.user.email.split('@')[0] : 'AGENT';
-          const fullName = session.user.user_metadata?.full_name || emailPrefix;
-          setUsername(fullName.toUpperCase());
-          setSystemLogs(prev => [
-            ...prev,
-            `🛡️ [AUTH] GOOGLE OAUTH VALIDATED FOR: ${session.user.email}`,
-            '🔑 [SESSION] CREATED AUTHORIZED SESSION ID Token.'
-          ]);
+          
+          // Try fetching profile from Supabase profiles table
+          const { data: profileData, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (!error && profileData) {
+            currentUsername = profileData.username;
+            currentDisplayName = profileData.display_name;
+            currentAvatar = profileData.avatar_icon;
+            isSupabaseLoaded = true;
+
+            // Sync to local storage
+            localStorage.setItem('algoclash_username', currentUsername);
+            localStorage.setItem('algoclash_display_name', currentDisplayName);
+            localStorage.setItem('algoclash_avatar', currentAvatar);
+          }
         }
       }
+
+      // If missing vital profile details (username or display name), force route to setup page
+      if (!currentUsername || !currentDisplayName) {
+        window.location.href = '/setup-profile';
+        return;
+      }
+
+      setUsername(currentUsername);
+      setDisplayName(currentDisplayName);
+      setAvatarId(currentAvatar);
+      
+      setSystemLogs(prev => [
+        ...prev,
+        `📡 [SESSION] WELCOME BACK, OPERATOR: ${currentDisplayName.toUpperCase()}`,
+        `⚙️ [BADGE] CYBER_AVATAR: ${currentAvatar.toUpperCase()}`,
+        isSupabaseLoaded ? '🛡️ [CLOUD] SYNCHRONIZED CLOUD DATABASE PROFILE.' : '💽 [LOCAL] OPERATING WITH SANDBOX STORAGE FALLBACK.'
+      ]);
+      setProfileLoading(false);
     };
-    getSupabaseSession();
+
+    checkProfileAndLoad();
   }, []);
 
   const handleLogout = async () => {
     localStorage.removeItem('algoclash_username');
+    localStorage.removeItem('algoclash_display_name');
+    localStorage.removeItem('algoclash_avatar');
     if (supabase && supabase.auth) {
       await supabase.auth.signOut();
     }
     window.location.href = '/';
   };
+
+  const handleOpenSettings = () => {
+    setEditDisplayName(displayName);
+    setEditUsername(username);
+    setEditAvatarId(avatarId);
+    setSettingsError('');
+    setSettingsSuccess('');
+    setIsEditing(true);
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    if (!editDisplayName.trim() || !editUsername.trim()) {
+      setSettingsError('All fields must contain valid character data.');
+      return;
+    }
+
+    setIsSavingSettings(true);
+    setSettingsError('');
+    setSettingsSuccess('');
+
+    try {
+      let isUnique = true;
+
+      // Verify unique username in database if username changed
+      if (editUsername !== username && supabase && supabase.auth && sessionUser) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', editUsername)
+          .neq('id', sessionUser.id);
+
+        if (!error && data && data.length > 0) {
+          isUnique = false;
+        }
+      }
+
+      if (!isUnique) {
+        setSettingsError('Identifier collision: Username already in use.');
+        setIsSavingSettings(false);
+        return;
+      }
+
+      // Upsert profile in Supabase
+      if (supabase && supabase.auth && sessionUser) {
+        await supabase
+          .from('profiles')
+          .upsert({
+            id: sessionUser.id,
+            username: editUsername,
+            display_name: editDisplayName,
+            avatar_icon: editAvatarId,
+            updated_at: new Date().toISOString()
+          });
+      }
+
+      // Cache locally
+      localStorage.setItem('algoclash_username', editUsername);
+      localStorage.setItem('algoclash_display_name', editDisplayName);
+      localStorage.setItem('algoclash_avatar', editAvatarId);
+
+      setUsername(editUsername);
+      setDisplayName(editDisplayName);
+      setAvatarId(editAvatarId);
+
+      setSettingsSuccess('Handshake verified: Profile updated successfully.');
+      setSystemLogs(prev => [
+        ...prev,
+        `⚙️ [PROFILE_UPDATE] SYSTEM ALIAS SYNCED: ${editDisplayName.toUpperCase()}`
+      ]);
+
+      // Route back to dashboard after brief success display
+      setTimeout(() => {
+        setIsEditing(false);
+      }, 1200);
+
+    } catch (err) {
+      setSettingsError('System fault: Could not synchronize updates.');
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const handleDeleteAccountConfirm = async () => {
+    if (deleteConfirmation !== 'OVERWRITE') {
+      setSettingsError('Safety key mismatch. Please type "OVERWRITE" to proceed.');
+      return;
+    }
+
+    try {
+      if (supabase && supabase.auth && sessionUser) {
+        // Delete profile row in Supabase database
+        await supabase.from('profiles').delete().eq('id', sessionUser.id);
+        
+        // Triggers signout (Vercel deployment env will handle deleting matching records)
+        await supabase.auth.signOut();
+      }
+
+      // Wipe local storage completely
+      localStorage.clear();
+      window.location.href = '/';
+
+    } catch (err) {
+      setSettingsError('Account termination failed. Please try again.');
+    }
+  };
+
+  if (profileLoading) {
+    return (
+      <div style={{
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: '#020203',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: "'Space Grotesk', sans-serif"
+      }}>
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <span style={{ fontSize: '10px', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', letterSpacing: '0.25em' }}>
+            ⚡ DECRYPTING SECURE CREDENTIAL CORE...
+          </span>
+          <div style={{ height: '2px', width: '220px', backgroundColor: 'rgba(255,255,255,0.05)', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: '40%', backgroundColor: 'var(--accent-cyan)', position: 'absolute', animation: 'splash-ping 1.2s infinite ease-in-out' }}></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentAvatarInfo = AVATARS.find(a => a.id === avatarId) || AVATARS[0];
 
   return (
     <div style={{
@@ -58,174 +252,556 @@ export const DashboardPage = () => {
       overflow: 'hidden',
       fontFamily: "'Space Grotesk', sans-serif"
     }}>
-      {/* Background Coding Grid Layer */}
-      <div className="grid-bg"></div>
+      <InteractiveBackground />
 
-      {/* scanlines */}
+      {/* Grid overlay */}
+      <div className="grid-bg" style={{ opacity: 0.85 }}></div>
       <div className="scanlines"></div>
 
-      {/* Cyber Glowing Backdrop Decals */}
-      <div style={{ position: 'absolute', top: '5%', right: '10%', width: '600px', height: '600px', borderRadius: '9999px', background: 'radial-gradient(circle, rgba(0, 242, 254, 0.05) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none' }}></div>
-      <div style={{ position: 'absolute', bottom: '5%', left: '5%', width: '500px', height: '500px', borderRadius: '9999px', background: 'radial-gradient(circle, rgba(244, 63, 94, 0.035) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none' }}></div>
+      {/* Decals */}
+      <div style={{ position: 'absolute', top: '5%', right: '10%', width: '500px', height: '500px', borderRadius: '9999px', background: 'radial-gradient(circle, rgba(0, 242, 254, 0.04) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none' }}></div>
+      <div style={{ position: 'absolute', bottom: '5%', left: '5%', width: '400px', height: '400px', borderRadius: '9999px', background: 'radial-gradient(circle, rgba(244, 63, 94, 0.03) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none' }}></div>
 
-      <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <div style={{ position: 'relative', zIndex: 10, maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '28px' }}>
         
         {/* HEADER SECTION */}
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', paddingBottom: '20px' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', paddingBottom: '16px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span className="font-display" style={{ fontWeight: '900', fontSize: '24px', letterSpacing: '0.2em' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span className="font-display" style={{ fontWeight: '900', fontSize: '22px', letterSpacing: '0.2em' }}>
                 ALGO<span style={{ color: 'var(--accent-cyan)' }}>CLASH</span>
               </span>
               <span style={{ fontSize: '8px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)', border: '1px solid var(--accent-yellow)', padding: '2px 6px', borderRadius: '2px', letterSpacing: '0.1em' }}>
                 COMMAND_CENTER
               </span>
             </div>
-            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', marginTop: '6px' }}>
+            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
               LOC: STAGING_SYS // PORT_NODE_ACTIVE
             </p>
           </div>
           
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <CyberButton 
+              variant={isEditing ? 'primary' : 'ghost'} 
+              size="sm" 
+              onClick={isEditing ? () => setIsEditing(false) : handleOpenSettings}
+            >
+              {isEditing ? '← RETURN TO COMMAND PANEL' : '⚙️ ACC_SETTINGS'}
+            </CyberButton>
             <CyberButton variant="ghost" size="sm" onClick={handleLogout}>
-              TERMINATE SESSION (LOGOUT)
+              LOGOUT
             </CyberButton>
           </div>
         </header>
 
-        {/* HERO GREETING BANNER */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          style={{
-            position: 'relative',
-            backgroundColor: 'rgba(2, 2, 3, 0.85)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(0, 242, 254, 0.15)',
-            boxShadow: '0 0 24px rgba(0, 242, 254, 0.06)',
-            padding: '36px 40px',
-            clipPath: 'polygon(0% 0%, 97% 0%, 100% 24px, 100% 100%, 3% 100%, 0% calc(100% - 24px))',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '24px'
-          }}
-        >
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '50px', backgroundColor: 'var(--accent-cyan)' }}></div>
-          <div style={{ position: 'absolute', bottom: 0, right: 0, width: '4px', height: '50px', backgroundColor: 'var(--accent-crimson)' }}></div>
-          
-          <div>
-            <span style={{ fontSize: '10px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)', fontWeight: 'bold', letterSpacing: '0.25em' }}>
-              📡 INCOMING SECURE LINK ESTABLISHED
-            </span>
-            <h1 className="font-display glow-cyan" style={{ fontSize: '38px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#fff', marginTop: '8px' }}>
-              HELLO, <span style={{ color: 'var(--accent-cyan)' }}>{username}</span>
-            </h1>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px', maxWidth: '600px', lineHeight: '1.6' }}>
-              Your authentication handshake succeeded. You are cleared for tactical live code clashing. Synchronize with the matchmaking grid or initiate compile simulations inside the combat deck.
-            </p>
-          </div>
+        {/* MAIN PANEL CONTENT */}
+        <AnimatePresence mode="wait">
+          {!isEditing ? (
+            <motion.div
+              key="dashboard-view"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.3 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}
+            >
+              {/* HERO GREETING BANNER */}
+              <div
+                style={{
+                  position: 'relative',
+                  backgroundColor: 'rgba(2, 2, 3, 0.85)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(0, 242, 254, 0.15)',
+                  boxShadow: '0 0 24px rgba(0, 242, 254, 0.06)',
+                  padding: '32px 36px',
+                  clipPath: 'polygon(0% 0%, 97% 0%, 100% 24px, 100% 100%, 3% 100%, 0% calc(100% - 24px))',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '24px'
+                }}
+              >
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '50px', backgroundColor: 'var(--accent-cyan)' }}></div>
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: '4px', height: '50px', backgroundColor: 'var(--accent-crimson)' }}></div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                  {/* Big Cyber Badge */}
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${currentAvatarInfo.color}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '32px',
+                    boxShadow: `0 0 16px ${currentAvatarInfo.glow}`
+                  }}>
+                    {currentAvatarInfo.icon}
+                  </div>
 
-          <div>
-            <CyberButton variant="primary" size="lg" onClick={() => window.location.href = '/'}>
-              ENTER BATTLEFIELD
-            </CyberButton>
-          </div>
-        </motion.div>
-
-        {/* METRICS & CONSOLE STATS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-          
-          {/* STATS WIDGET */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            style={{
-              backgroundColor: 'rgba(2, 2, 3, 0.7)',
-              border: '1px solid rgba(255,255,255,0.05)',
-              padding: '24px',
-              borderRadius: '4px',
-              position: 'relative'
-            }}
-          >
-            <div style={{ borderBottom: '1px dashed rgba(255,255,255,0.08)', paddingBottom: '10px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>// COMBAT_STATS.DAT</span>
-              <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>RANK: SPECIALIST</span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>CLASH RATING (ELO)</span>
-                <span className="glow-cyan" style={{ fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '18px', color: 'var(--accent-cyan)' }}>1,540</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>WIN / LOSS RATIO</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>14 / 2 (87.5%)</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>ACCURACY RATING</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '14px', color: 'var(--accent-yellow)' }}>94.2%</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--text-muted)' }}>
-                  <span>EXPERIENCE PROGRESSION</span>
-                  <span>780 / 1000 XP</span>
+                  <div>
+                    <span style={{ fontSize: '10px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)', fontWeight: 'bold', letterSpacing: '0.25em' }}>
+                      📡 ACCESS CODE AUTHD: @{username}
+                    </span>
+                    <h1 className="font-display glow-cyan" style={{ fontSize: '34px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#fff', marginTop: '6px' }}>
+                      HELLO, <span style={{ color: 'var(--accent-cyan)' }}>{displayName}</span>
+                    </h1>
+                  </div>
                 </div>
-                <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: '78%', height: '100%', backgroundColor: 'var(--accent-cyan)', boxShadow: '0 0 8px var(--accent-cyan)' }}></div>
+
+                <div>
+                  <CyberButton variant="primary" size="lg" onClick={() => window.location.href = '/'}>
+                    ENTER BATTLEFIELD
+                  </CyberButton>
                 </div>
               </div>
-            </div>
-          </motion.div>
 
-          {/* TELEMETRY CONSOLE PANEL */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            style={{
-              backgroundColor: 'rgba(2, 2, 3, 0.7)',
-              border: '1px solid rgba(255,255,255,0.05)',
-              padding: '24px',
-              borderRadius: '4px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between'
-            }}
-          >
-            <div>
-              <div style={{ borderBottom: '1px dashed rgba(255,255,255,0.08)', paddingBottom: '10px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', color: 'var(--accent-crimson)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>// SYSTEM_TELEMETRY.LOG</span>
-                <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>LIVE_FEED</span>
+              {/* STATS & DIAGNOSTICS */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                
+                {/* COMBAT RECORDS */}
+                <div style={{
+                  backgroundColor: 'rgba(2, 2, 3, 0.7)',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  padding: '24px',
+                  borderRadius: '4px',
+                  position: 'relative'
+                }}>
+                  <div style={{ borderBottom: '1px dashed rgba(255,255,255,0.08)', paddingBottom: '10px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>// COMBAT_STATS.DAT</span>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>RANK: SPECIALIST</span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>CLASH RATING (ELO)</span>
+                      <span className="glow-cyan" style={{ fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '18px', color: 'var(--accent-cyan)' }}>1,540</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>WIN / LOSS RATIO</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>14 / 2 (87.5%)</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>ACCURACY RATING</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '14px', color: 'var(--accent-yellow)' }}>94.2%</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--text-muted)' }}>
+                        <span>EXPERIENCE PROGRESSION</span>
+                        <span>780 / 1000 XP</span>
+                      </div>
+                      <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ width: '78%', height: '100%', backgroundColor: 'var(--accent-cyan)', boxShadow: '0 0 8px var(--accent-cyan)' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* TELEMETRY FEED */}
+                <div style={{
+                  backgroundColor: 'rgba(2, 2, 3, 0.7)',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  padding: '24px',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <div style={{ borderBottom: '1px dashed rgba(255,255,255,0.08)', paddingBottom: '10px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--accent-crimson)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>// SYSTEM_TELEMETRY.LOG</span>
+                      <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>LIVE_FEED</span>
+                    </div>
+
+                    <div style={{
+                      height: '110px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                      border: '1px solid rgba(255,255,255,0.02)',
+                      padding: '10px',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '9px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      overflowY: 'auto'
+                    }}>
+                      {systemLogs.map((log, idx) => (
+                        <div key={idx} style={{ color: log.includes('🚨') ? 'var(--accent-crimson)' : log.includes('🛡️') || log.includes('🟢') ? 'var(--accent-cyan)' : '#94a3b8' }}>
+                          {log}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
               </div>
-
-              <div style={{
-                height: '110px',
-                backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                border: '1px solid rgba(255,255,255,0.02)',
-                padding: '10px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '9px',
+            </motion.div>
+          ) : (
+            <motion.div
+              key="settings-view"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.3 }}
+              style={{
+                backgroundColor: 'rgba(2, 2, 3, 0.82)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                padding: '36px 40px',
+                clipPath: 'polygon(0% 0%, 97% 0%, 100% 20px, 100% 100%, 3% 100%, 0% calc(100% - 20px))',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '6px',
-                overflowY: 'auto'
-              }}>
-                {systemLogs.map((log, idx) => (
-                  <div key={idx} style={{ color: log.includes('🚨') ? 'var(--accent-crimson)' : log.includes('🛡️') ? 'var(--accent-cyan)' : '#94a3b8' }}>
-                    {log}
-                  </div>
-                ))}
+                gap: '24px'
+              }}
+            >
+              <div style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '10px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)', fontWeight: 'bold', letterSpacing: '0.15em' }}>
+                  [ ACCESS_SETTINGS / PROFILE_TUNING ]
+                </span>
               </div>
-            </div>
-          </motion.div>
 
-        </div>
+              <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                
+                {/* Inputs Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+                  
+                  {/* Nickname Input */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>
+                      DISPLAY NAME (NICKNAME)
+                    </label>
+                    <input 
+                      type="text" 
+                      maxLength={20}
+                      value={editDisplayName}
+                      onChange={(e) => setEditDisplayName(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '4px',
+                        color: '#fff',
+                        fontSize: '13px',
+                        fontFamily: 'var(--font-mono)',
+                        outline: 'none',
+                        transition: 'border-color 0.3s'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'var(--accent-cyan)'}
+                      onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                    />
+                  </div>
+
+                  {/* Username Input */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>
+                      TACTICAL USERNAME (UNIQUE)
+                    </label>
+                    <input 
+                      type="text" 
+                      maxLength={18}
+                      value={editUsername}
+                      onChange={(e) => setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '4px',
+                        color: 'var(--accent-cyan)',
+                        fontSize: '13px',
+                        fontFamily: 'var(--font-mono)',
+                        outline: 'none',
+                        transition: 'border-color 0.3s'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'var(--accent-cyan)'}
+                      onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                    />
+                  </div>
+
+                </div>
+
+                {/* Avatar Badge Re-selector */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '10px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>
+                    SELECT ACTIVE CYBERNETIC BADGE
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+                    {AVATARS.map(avatar => (
+                      <button
+                        key={avatar.id}
+                        type="button"
+                        onClick={() => setEditAvatarId(avatar.id)}
+                        style={{
+                          padding: '10px 4px',
+                          backgroundColor: editAvatarId === avatar.id ? 'rgba(255,255,255,0.03)' : 'transparent',
+                          border: editAvatarId === avatar.id ? `1px solid ${avatar.color}` : '1px solid rgba(255,255,255,0.05)',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.3s',
+                          boxShadow: editAvatarId === avatar.id ? `0 0 8px ${avatar.glow}` : 'none'
+                        }}
+                      >
+                        <span style={{ fontSize: '18px' }}>{avatar.icon}</span>
+                        <span style={{ fontSize: '8px', color: editAvatarId === avatar.id ? avatar.color : 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>
+                          {avatar.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Status prompts */}
+                {settingsError && (
+                  <div style={{ color: 'var(--accent-crimson)', fontSize: '11px', fontFamily: 'var(--font-mono)', backgroundColor: 'rgba(244,63,94,0.05)', border: '1px solid var(--accent-crimson)', padding: '8px', borderRadius: '4px' }}>
+                    🚨 {settingsError}
+                  </div>
+                )}
+                {settingsSuccess && (
+                  <div style={{ color: 'var(--accent-cyan)', fontSize: '11px', fontFamily: 'var(--font-mono)', backgroundColor: 'rgba(0,242,254,0.05)', border: '1px solid var(--accent-cyan)', padding: '8px', borderRadius: '4px' }}>
+                    🟢 {settingsSuccess}
+                  </div>
+                )}
+
+                {/* Form Buttons */}
+                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                  <button
+                    type="submit"
+                    disabled={isSavingSettings}
+                    style={{
+                      padding: '12px 24px',
+                      backgroundColor: 'transparent',
+                      border: '1px solid var(--accent-cyan)',
+                      color: '#fff',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      letterSpacing: '0.15em',
+                      cursor: 'pointer',
+                      clipPath: 'polygon(0% 0%, 95% 0%, 100% 8px, 100% 100%, 5% 100%, 0% calc(100% - 8px))',
+                      boxShadow: '0 0 10px rgba(0, 242, 254, 0.12)',
+                      transition: 'all 0.3s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--accent-cyan)';
+                      e.currentTarget.style.color = '#000';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = '#fff';
+                    }}
+                  >
+                    {isSavingSettings ? 'SYNCING TUNING...' : 'COMMIT CHANGES'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    style={{
+                      padding: '12px 24px',
+                      backgroundColor: 'transparent',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: 'var(--text-secondary)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      letterSpacing: '0.15em',
+                      cursor: 'pointer',
+                      clipPath: 'polygon(0% 0%, 95% 0%, 100% 8px, 100% 100%, 5% 100%, 0% calc(100% - 8px))',
+                      transition: 'all 0.3s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#fff';
+                      e.currentTarget.style.color = '#fff';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                    }}
+                  >
+                    CANCEL
+                  </button>
+                </div>
+              </form>
+
+              {/* DANGER ZONE */}
+              <div style={{ marginTop: '24px', borderTop: '1px solid rgba(244, 63, 94, 0.15)', paddingTop: '20px' }}>
+                <span style={{ fontSize: '10px', color: 'var(--accent-crimson)', fontFamily: 'var(--font-mono)', fontWeight: 'bold', letterSpacing: '0.2em' }}>
+                  ⚠️ DANGER_ZONE.SECURE
+                </span>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '6px', marginBottom: '14px' }}>
+                  Deletions are permanent. Removing this profile will wipe your dueling record history and detach OAuth bindings from the core matchmaking databases.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteConfirmation('');
+                    setSettingsError('');
+                    setShowDeleteModal(true);
+                  }}
+                  style={{
+                    padding: '10px 16px',
+                    backgroundColor: 'rgba(244, 63, 94, 0.05)',
+                    border: '1px solid var(--accent-crimson)',
+                    color: 'var(--accent-crimson)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    letterSpacing: '0.1em',
+                    cursor: 'pointer',
+                    clipPath: 'polygon(0% 0%, 95% 0%, 100% 6px, 100% 100%, 5% 100%, 0% calc(100% - 6px))',
+                    transition: 'all 0.3s',
+                    boxShadow: '0 0 10px rgba(244, 63, 94, 0.1)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--accent-crimson)';
+                    e.currentTarget.style.color = '#000';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(244, 63, 94, 0.05)';
+                    e.currentTarget.style.color = 'var(--accent-crimson)';
+                  }}
+                >
+                  TERMINATE COMBATANT PROFILE (DELETE ACC)
+                </button>
+              </div>
+
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </div>
+
+      {/* ACCOUNT DELETION MODAL OVERLAY */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              backgroundColor: 'rgba(0,0,0,0.85)',
+              backdropFilter: 'blur(10px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px'
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 16 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 16 }}
+              style={{
+                width: '100%',
+                maxWidth: '440px',
+                backgroundColor: '#050202',
+                border: '1px solid var(--accent-crimson)',
+                boxShadow: '0 0 30px rgba(244, 63, 94, 0.18)',
+                padding: '30px',
+                clipPath: 'polygon(0% 0%, 94% 0%, 100% 16px, 100% 100%, 6% 100%, 0% calc(100% - 16px))',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px',
+                position: 'relative'
+              }}
+            >
+              {/* Top Warning Stripes */}
+              <div className="hazard-stripes-crimson" style={{ height: '6px', position: 'absolute', top: 0, left: 0, right: 0 }}></div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-crimson)' }}>
+                <span style={{ fontSize: '24px' }}>⚠️</span>
+                <span className="font-display" style={{ fontWeight: '900', fontSize: '18px', letterSpacing: '0.1em' }}>
+                  PROFILE WIPE PROTOCOL
+                </span>
+              </div>
+
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.6', fontFamily: 'var(--font-mono)' }}>
+                This will initiate server-wide account removal. Your username, stats, and profile bindings will be wiped. This action is irreversible.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>
+                  CONFIRM BY TYPING "OVERWRITE" BELOW:
+                </label>
+                <input
+                  type="text"
+                  placeholder="OVERWRITE"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value.toUpperCase())}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: 'rgba(244, 63, 94, 0.05)',
+                    border: '1px solid rgba(244, 63, 94, 0.3)',
+                    borderRadius: '4px',
+                    color: 'var(--accent-crimson)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    outline: 'none',
+                    textAlign: 'center',
+                    letterSpacing: '0.2em'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = 'var(--accent-crimson)'}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(244, 63, 94, 0.3)'}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccountConfirm}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: deleteConfirmation === 'OVERWRITE' ? 'var(--accent-crimson)' : 'transparent',
+                    border: '1px solid var(--accent-crimson)',
+                    color: deleteConfirmation === 'OVERWRITE' ? '#000' : 'var(--accent-crimson)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    letterSpacing: '0.1em',
+                    cursor: deleteConfirmation === 'OVERWRITE' ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.3s'
+                  }}
+                >
+                  CONFIRM WIPE
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#fff',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    letterSpacing: '0.1em',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s'
+                  }}
+                >
+                  ABORT
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };
