@@ -4,6 +4,7 @@ import { CyberButton } from './CyberButton';
 import { CyberCard } from './CyberCard';
 import { TournamentBracket } from './TournamentBracket';
 import { InteractiveBackground } from './InteractiveBackground';
+import { LogoWordmark } from './LogoWordmark';
 
 export const LandingPage = ({ onNavigateToArena }) => {
   const [activeCompareTab, setActiveCompareTab] = useState('leetcode');
@@ -278,9 +279,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
             <div style={{ transform: 'rotate(18deg) scale(0.65)', transformOrigin: 'right top' }}>{renderCursor('cyan', true)}</div>
             <div style={{ transform: 'rotate(-18deg) scale(0.65)', transformOrigin: 'left top' }}>{renderCursor('crimson', false)}</div>
           </div>
-          <span className="font-display" style={{ fontWeight: '900', fontSize: '20px', letterSpacing: '0.2em', color: '#fff' }}>
-            ALGO<span style={{ color: 'var(--accent-cyan)' }}>CLASH</span>
-          </span>
+          <LogoWordmark fontSize="18px" />
           <span style={{ fontSize: '8px', color: 'rgba(0, 242, 254, 0.6)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(0, 242, 254, 0.3)', padding: '2px 6px', borderRadius: '2px', letterSpacing: '0.1em' }}>
             SYS_LOC: DUEL_STAGING
           </span>
@@ -1192,9 +1191,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
             <div style={{ transform: 'rotate(18deg) scale(0.5)', transformOrigin: 'right top' }}>{renderCursor('cyan', true)}</div>
             <div style={{ transform: 'rotate(-18deg) scale(0.5)', transformOrigin: 'left top' }}>{renderCursor('crimson', false)}</div>
           </div>
-          <span className="font-display" style={{ fontWeight: '900', fontSize: '20px', letterSpacing: '0.15em', color: '#fff' }}>
-            ALGO<span style={{ color: 'var(--accent-cyan)' }}>CLASH</span>
-          </span>
+          <LogoWordmark fontSize="18px" />
         </div>
         
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', maxWidth: '500px', margin: '0 auto 24px auto', lineHeight: 1.6, fontFamily: 'var(--font-mono)' }}>

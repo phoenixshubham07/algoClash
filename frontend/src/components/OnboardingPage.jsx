@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { InteractiveBackground } from './InteractiveBackground';
 import { supabase } from '../supabaseClient';
+import { LogoWordmark } from './LogoWordmark';
 
 const AVATARS = [
   { id: 'toxic_code', name: 'TOXIC_CODE', icon: '☣️', color: 'var(--accent-cyan)', glow: 'rgba(0, 242, 254, 0.4)' },
@@ -160,9 +161,7 @@ export const OnboardingPage = () => {
         
         {/* LOGO AREA */}
         <div style={{ textAlign: 'center' }}>
-          <span className="font-display" style={{ fontWeight: '900', fontSize: '24px', letterSpacing: '0.25em', color: '#fff' }}>
-            ALGO<span style={{ color: 'var(--accent-cyan)' }}>CLASH</span>
-          </span>
+          <LogoWordmark fontSize="24px" />
           <p style={{ fontSize: '9px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)', marginTop: '4px', letterSpacing: '0.15em' }}>
             [ INITIALIZE COMBATANT IDENTITY ]
           </p>

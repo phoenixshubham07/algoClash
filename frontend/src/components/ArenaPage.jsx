@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { LogoWordmark } from './LogoWordmark';
 import { 
   Trophy, 
   Zap, 
@@ -527,9 +528,10 @@ export const ArenaPage = ({ onReturnToHome, initialOpponent = null }) => {
             ⚔
           </div>
           <div>
-            <h1 className="text-lg font-bold tracking-widest text-[#FF3B30] flex items-center gap-2">
-              ALGOCLASH <span className="text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-black tracking-normal">PREMIUM ALPHA</span>
-            </h1>
+            <div className="flex items-center gap-2">
+              <LogoWordmark fontSize="16px" />
+              <span className="text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-black tracking-normal">PREMIUM ALPHA</span>
+            </div>
             <p className="text-[10px] text-slate-500 tracking-wider">SYSTEM REGISTRY // BLR_DROPLET_2</p>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CyberButton } from './CyberButton';
 import { InteractiveBackground } from './InteractiveBackground';
 import { supabase } from '../supabaseClient';
+import { LogoWordmark } from './LogoWordmark';
 
 const AVATARS = [
   { id: 'toxic_code', name: 'TOXIC_CODE', icon: '☣️', color: 'var(--accent-cyan)', glow: 'rgba(0, 242, 254, 0.4)' },
@@ -268,9 +269,7 @@ export const DashboardPage = () => {
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', paddingBottom: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span className="font-display" style={{ fontWeight: '900', fontSize: '22px', letterSpacing: '0.2em' }}>
-                ALGO<span style={{ color: 'var(--accent-cyan)' }}>CLASH</span>
-              </span>
+              <LogoWordmark fontSize="18px" />
               <span style={{ fontSize: '8px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)', border: '1px solid var(--accent-yellow)', padding: '2px 6px', borderRadius: '2px', letterSpacing: '0.1em' }}>
                 COMMAND_CENTER
               </span>
