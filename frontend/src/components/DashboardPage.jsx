@@ -68,32 +68,57 @@ export const DashboardPage = () => {
       let isSupabaseLoaded = false;
       let sessionUserInstance = null;
 
+      // 1. If Supabase is connected, check active cloud session and load profile metadata
       if (supabase && supabase.auth) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
           sessionUserInstance = session.user;
           setSessionUser(session.user);
           
-          // Try fetching profile from Supabase profiles table
-          const { data: profileData, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          if (!error && profileData) {
-            currentUsername = profileData.username;
-            currentDisplayName = profileData.display_name;
-            currentAvatar = profileData.avatar_icon;
+          // First try reading from user metadata (which is cloud-persistent and database tableless)
+          const meta = session.user.user_metadata;
+          if (meta && meta.username && meta.display_name) {
+            currentUsername = meta.username;
+            currentDisplayName = meta.display_name;
+            currentAvatar = meta.avatar_icon || 'toxic_code';
             isSupabaseLoaded = true;
+          } else {
+            // Fallback: Try fetching profile from Supabase profiles table if it exists
+            try {
+              const { data: profileData, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .maybeSingle();
 
-            // Sync to local storage
-            localStorage.setItem('algoclash_username', currentUsername);
-            localStorage.setItem('algoclash_display_name', currentDisplayName);
-            localStorage.setItem('algoclash_avatar', currentAvatar);
+              if (!error && profileData) {
+                currentUsername = profileData.username;
+                currentDisplayName = profileData.display_name;
+                currentAvatar = profileData.avatar_icon;
+                isSupabaseLoaded = true;
+              }
+            } catch (e) {
+              // Silence DB table error
+            }
           }
         }
       }
+
+      // 2. If mock user or local storage session, try to retrieve from persistent profile registry
+      if (!isSupabaseLoaded && currentUsername) {
+        const registryData = localStorage.getItem('algoclash_registry_' + currentUsername.toLowerCase());
+        if (registryData) {
+          const parsed = JSON.parse(registryData);
+          currentUsername = parsed.username || currentUsername;
+          currentDisplayName = parsed.displayName || currentDisplayName;
+          currentAvatar = parsed.avatarId || currentAvatar;
+        }
+      }
+
+      // Cache current session details in active local storage keys
+      if (currentUsername) localStorage.setItem('algoclash_username', currentUsername);
+      if (currentDisplayName) localStorage.setItem('algoclash_display_name', currentDisplayName);
+      localStorage.setItem('algoclash_avatar', currentAvatar);
 
       // If missing vital profile details (username or display name), force route to setup page
       if (!currentUsername || !currentDisplayName) {
@@ -169,23 +194,46 @@ export const DashboardPage = () => {
         return;
       }
 
-      // Upsert profile in Supabase
+      // Upsert profile in Supabase Auth user metadata
       if (supabase && supabase.auth && sessionUser) {
-        await supabase
-          .from('profiles')
-          .upsert({
-            id: sessionUser.id,
+        const { error } = await supabase.auth.updateUser({
+          data: {
             username: editUsername,
             display_name: editDisplayName,
-            avatar_icon: editAvatarId,
-            updated_at: new Date().toISOString()
-          });
+            avatar_icon: editAvatarId
+          }
+        });
+
+        if (error) {
+          console.warn("Supabase user metadata update failed.", error.message);
+        }
+
+        // Also attempt database table update (silent fallback)
+        try {
+          await supabase
+            .from('profiles')
+            .upsert({
+              id: sessionUser.id,
+              username: editUsername,
+              display_name: editDisplayName,
+              avatar_icon: editAvatarId,
+              updated_at: new Date().toISOString()
+            });
+        } catch (e) {
+          // Ignore DB error
+        }
       }
 
-      // Cache locally
+      // Cache locally in active session keys
       localStorage.setItem('algoclash_username', editUsername);
       localStorage.setItem('algoclash_display_name', editDisplayName);
       localStorage.setItem('algoclash_avatar', editAvatarId);
+
+      // Save to persistent local registry
+      localStorage.setItem(
+        'algoclash_registry_' + editUsername.toLowerCase(),
+        JSON.stringify({ username: editUsername, displayName: editDisplayName, avatarId: editAvatarId })
+      );
 
       setUsername(editUsername);
       setDisplayName(editDisplayName);

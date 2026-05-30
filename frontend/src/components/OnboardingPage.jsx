@@ -92,33 +92,47 @@ export const OnboardingPage = () => {
         return;
       }
 
-      // Upsert profile data
-      let profileSaved = false;
+      // Save profile metadata inside Supabase Auth user metadata for permanent tableless cloud storage
       if (supabase && supabase.auth) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
-          const { error } = await supabase
-            .from('profiles')
-            .upsert({
+          const { error } = await supabase.auth.updateUser({
+            data: {
+              username: username,
+              display_name: displayName,
+              avatar_icon: selectedAvatar
+            }
+          });
+
+          if (error) {
+            console.warn("Supabase user metadata update failed.", error.message);
+          }
+
+          // Also attempt database table write (silent fallback if table doesn't exist)
+          try {
+            await supabase.from('profiles').upsert({
               id: session.user.id,
               username: username,
               display_name: displayName,
               avatar_icon: selectedAvatar,
               updated_at: new Date().toISOString()
             });
-
-          if (!error) {
-            profileSaved = true;
-          } else {
-            console.warn("Supabase upsert failed, database table profiles might not be set up yet. Storing locally instead.", error.message);
+          } catch (e) {
+            // Ignore DB errors
           }
         }
       }
 
-      // Save to localStorage as a primary cache & local fallback
+      // Save to active session cache
       localStorage.setItem('algoclash_username', username);
       localStorage.setItem('algoclash_display_name', displayName);
       localStorage.setItem('algoclash_avatar', selectedAvatar);
+
+      // Save to persistent local registry
+      localStorage.setItem(
+        'algoclash_registry_' + username.toLowerCase(),
+        JSON.stringify({ username, displayName, avatarId: selectedAvatar })
+      );
 
       // Force route to dashboard
       window.location.href = '/dashboard';
