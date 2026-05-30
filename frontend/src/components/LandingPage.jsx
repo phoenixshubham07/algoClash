@@ -475,6 +475,33 @@ export const LandingPage = ({ onNavigateToArena }) => {
 
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '100vh', backgroundColor: 'var(--bg-black)', overflow: 'hidden' }}>
+      {/* UNDER CONSTRUCTION TICKER */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '24px',
+        backgroundColor: '#FFE600',
+        color: '#000000',
+        zIndex: 200,
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        borderBottom: '1px solid #000000',
+        fontWeight: '900',
+        fontSize: '9px',
+        fontFamily: 'var(--font-mono)',
+        letterSpacing: '0.15em'
+      }}>
+        <div className="animate-marquee whitespace-nowrap flex gap-12">
+          <span>⚠️ ALPHAPATH SEEDING IN ACTIVE COMPILATION // SYSTEM UNDER RECONSTRUCTION // PRACTICE SIMULATOR DEPLOYED // NEXT TOURNAMENT SIGNUPS OPENING SOON ⚠️</span>
+          <span>⚠️ ALPHAPATH SEEDING IN ACTIVE COMPILATION // SYSTEM UNDER RECONSTRUCTION // PRACTICE SIMULATOR DEPLOYED // NEXT TOURNAMENT SIGNUPS OPENING SOON ⚠️</span>
+          <span>⚠️ ALPHAPATH SEEDING IN ACTIVE COMPILATION // SYSTEM UNDER RECONSTRUCTION // PRACTICE SIMULATOR DEPLOYED // NEXT TOURNAMENT SIGNUPS OPENING SOON ⚠️</span>
+          <span>⚠️ ALPHAPATH SEEDING IN ACTIVE COMPILATION // SYSTEM UNDER RECONSTRUCTION // PRACTICE SIMULATOR DEPLOYED // NEXT TOURNAMENT SIGNUPS OPENING SOON ⚠️</span>
+        </div>
+      </div>
+
       {/* BACKGROUND GRAPHICS & TEXTURES */}
       <InteractiveBackground />
       <div className="scanlines"></div>
@@ -485,7 +512,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
         onMouseLeave={() => setIsHeaderHovered(false)}
         style={{
           position: 'fixed',
-          top: scrolled ? '12px' : '22px',
+          top: scrolled ? '36px' : '46px',
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 100,
