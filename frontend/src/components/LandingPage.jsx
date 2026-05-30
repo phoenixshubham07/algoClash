@@ -11,7 +11,6 @@ export const LandingPage = ({ onNavigateToArena }) => {
   const [scrolled, setScrolled] = useState(false);
   const [isHeaderHovered, setIsHeaderHovered] = useState(false);
   const [activeSection, setActiveSection] = useState('logo-fold');
-  const [latency, setLatency] = useState(12);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
 
   useEffect(() => {
@@ -42,17 +41,6 @@ export const LandingPage = ({ onNavigateToArena }) => {
     // Run initially
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLatency(prev => {
-        const delta = Math.random() > 0.5 ? 1 : -1;
-        const next = prev + delta;
-        return next >= 8 && next <= 18 ? next : 12;
-      });
-    }, 3000);
-    return () => clearInterval(interval);
   }, []);
 
   const comparisonData = {
@@ -311,7 +299,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           overflow: 'hidden'
         }}
       >
-        {/* Subtle Horizontal Laser Scanner Sweep */}
+        {/* Subtle Horizontal Laser Scanner Sweep (10s interval) */}
         <div 
           style={{
             position: 'absolute',
@@ -322,10 +310,10 @@ export const LandingPage = ({ onNavigateToArena }) => {
             pointerEvents: 'none',
             transform: 'skewX(-30deg)'
           }}
-          className="animate-slice-sweep"
+          className="animate-slice-sweep-slow"
         />
 
-        {/* HUD Frame Corner Brackets */}
+        {/* HUD Frame Corner Brackets (Asymmetrical: Top-Left & Bottom-Right only) */}
         {/* Top-Left */}
         <div style={{
           position: 'absolute',
@@ -337,36 +325,6 @@ export const LandingPage = ({ onNavigateToArena }) => {
           borderTop: '2px solid var(--accent-cyan)',
           transform: isHeaderHovered ? 'translate(-2px, -2px)' : 'translate(0, 0)',
           transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-          pointerEvents: 'none',
-          opacity: 0.8
-        }} />
-        
-        {/* Top-Right (adjusted horizontal spacing dynamically to avoid clip-path cuts) */}
-        <div style={{
-          position: 'absolute',
-          top: '6px',
-          right: scrolled ? '14px' : '22px',
-          width: '10px',
-          height: '10px',
-          borderRight: '2px solid var(--accent-cyan)',
-          borderTop: '2px solid var(--accent-cyan)',
-          transform: isHeaderHovered ? 'translate(2px, -2px)' : 'translate(0, 0)',
-          transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), right 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
-          pointerEvents: 'none',
-          opacity: 0.8
-        }} />
-
-        {/* Bottom-Left */}
-        <div style={{
-          position: 'absolute',
-          bottom: '6px',
-          left: scrolled ? '14px' : '22px',
-          width: '10px',
-          height: '10px',
-          borderLeft: '2px solid var(--accent-crimson)',
-          borderBottom: '2px solid var(--accent-crimson)',
-          transform: isHeaderHovered ? 'translate(-2px, 2px)' : 'translate(0, 0)',
-          transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), left 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
           pointerEvents: 'none',
           opacity: 0.8
         }} />
@@ -438,39 +396,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
               {renderCursor('crimson', false)}
             </motion.div>
           </div>
-          <LogoWordmark fontSize="17px" />
-          
-          {/* Live Telemetry Panel */}
-          <span 
-            style={{ 
-              fontSize: '8px', 
-              color: 'rgba(0, 242, 254, 0.85)', 
-              fontFamily: 'var(--font-mono)', 
-              border: '1px solid rgba(0, 242, 254, 0.3)', 
-              padding: '3px 8px', 
-              borderRadius: '3px', 
-              letterSpacing: '0.08em',
-              backgroundColor: 'rgba(0, 242, 254, 0.05)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: 'inset 0 0 6px rgba(0, 242, 254, 0.05)',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <motion.span 
-              animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-              style={{ 
-                width: '5px', 
-                height: '5px', 
-                borderRadius: '50%', 
-                backgroundColor: '#10b981', 
-                boxShadow: '0 0 6px #10b981'
-              }} 
-            />
-            SYS_LOC: DUEL_STAGING // RTT: {latency}MS // PORT: OK
-          </span>
+          <LogoWordmark fontSize="18px" />
         </div>
 
         {/* Scroll-Spy Highlighted Links */}
@@ -496,25 +422,19 @@ export const LandingPage = ({ onNavigateToArena }) => {
                   gap: '6px',
                   position: 'relative',
                   padding: '4px 0',
-                  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                  fontWeight: isActive ? '700' : 'normal'
                 }} 
                 className="cyber-glitch-text"
               >
                 <span style={{ 
                   color: isActive ? 'var(--accent-cyan)' : 'transparent',
-                  textShadow: isActive ? '0 0 8px var(--accent-cyan)' : 'none',
                   transition: 'color 0.3s ease',
                   marginRight: isActive ? '0px' : '-8px'
                 }}>
                   //
                 </span>
-                <span style={{ 
-                  color: isActive ? '#fff' : 'var(--text-secondary)',
-                  textShadow: isActive ? '0 0 10px rgba(255, 255, 255, 0.4)' : 'none',
-                  fontWeight: isActive ? '700' : 'normal'
-                }}>
-                  {item.label}
-                </span>
+                {item.label}
 
                 {isActive && (
                   <motion.div 
@@ -536,7 +456,7 @@ export const LandingPage = ({ onNavigateToArena }) => {
           })}
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative', zIndex: 10 }}>
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'center', position: 'relative', zIndex: 10 }}>
           <a href="/login" style={{ textDecoration: 'none' }}>
             <CyberButton variant="warning" size="sm">
               LOG IN

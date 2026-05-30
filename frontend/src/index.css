@@ -125,6 +125,16 @@ body {
   animation: slice-sweep 1.2s cubic-bezier(0.075, 0.82, 0.165, 1) infinite;
 }
 
+@keyframes slice-sweep-slow {
+  0% { transform: translateX(-100%) skewX(-30deg); }
+  12% { transform: translateX(300%) skewX(-30deg); }
+  100% { transform: translateX(300%) skewX(-30deg); }
+}
+
+.animate-slice-sweep-slow {
+  animation: slice-sweep-slow 10s cubic-bezier(0.075, 0.82, 0.165, 1) infinite;
+}
+
 @keyframes glitch {
   0% { transform: translate(0); text-shadow: none; }
   20% { transform: translate(-2px, 1px); text-shadow: -1px 0 var(--accent-cyan), 1px 0 var(--accent-crimson); }

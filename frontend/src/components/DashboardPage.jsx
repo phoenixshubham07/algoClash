@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CyberButton } from './CyberButton';
 import { InteractiveBackground } from './InteractiveBackground';
@@ -13,6 +13,35 @@ const AVATARS = [
   { id: 'volt_strike', name: 'VOLT_STRIKE', icon: '⚡', color: 'var(--accent-yellow)', glow: 'rgba(255, 215, 0, 0.4)' },
   { id: 'biotic_core', name: 'BIOTIC_CORE', icon: '🧬', color: '#ec4899', glow: 'rgba(236, 72, 153, 0.4)' },
 ];
+
+const compressAndResizeImage = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = 128;
+        canvas.height = 128;
+        
+        const minSize = Math.min(img.width, img.height);
+        const sx = (img.width - minSize) / 2;
+        const sy = (img.height - minSize) / 2;
+        
+        ctx.drawImage(img, sx, sy, minSize, minSize, 0, 0, 128, 128);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => reject(new Error("Failed to load image element."));
+      img.src = e.target.result;
+    };
+    reader.onerror = (err) => reject(new Error("Failed to read file."));
+    reader.readAsDataURL(file);
+  });
+};
 
 const RECENT_DUELS = [
   { id: 1, rival: 'xX_CodeGhost_Xx', outcome: 'VICTORY', delta: '+24 ELO', lang: 'C++', time: '3m 45s', date: '2 HOURS AGO' },
@@ -48,6 +77,27 @@ export const DashboardPage = () => {
   const [settingsError, setSettingsError] = useState('');
   const [settingsSuccess, setSettingsSuccess] = useState('');
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  const editFileInputRef = useRef(null);
+
+  const handleEditFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setSettingsError('FILE REJECTED: Must be an image file.');
+      return;
+    }
+
+    try {
+      const compressed = await compressAndResizeImage(file);
+      setEditAvatarId(compressed);
+      setSettingsError('');
+    } catch (err) {
+      console.error(err);
+      setSettingsError('IMAGE ERROR: Failed to process image file.');
+    }
+  };
 
   // Account Deletion State
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -133,7 +183,7 @@ export const DashboardPage = () => {
       setSystemLogs(prev => [
         ...prev,
         `📡 [SESSION] WELCOME BACK, OPERATOR: ${currentDisplayName.toUpperCase()}`,
-        `⚙️ [BADGE] CYBER_AVATAR: ${currentAvatar.toUpperCase()}`,
+        `⚙️ [BADGE] CYBER_AVATAR: ${currentAvatar.startsWith('data:image/') ? 'CUSTOM_PFP_FILE' : currentAvatar.toUpperCase()}`,
         isSupabaseLoaded ? '🛡️ [CLOUD] SYNCHRONIZED CLOUD DATABASE PROFILE.' : '💽 [LOCAL] OPERATING WITH SANDBOX STORAGE FALLBACK.'
       ]);
       setProfileLoading(false);
@@ -302,7 +352,10 @@ export const DashboardPage = () => {
     );
   }
 
+  const isCustomAvatar = avatarId && avatarId.startsWith('data:image/');
   const currentAvatarInfo = AVATARS.find(a => a.id === avatarId) || AVATARS[0];
+  const avatarColor = isCustomAvatar ? 'var(--accent-cyan)' : currentAvatarInfo.color;
+  const avatarGlow = isCustomAvatar ? 'rgba(0, 242, 254, 0.4)' : currentAvatarInfo.glow;
 
   return (
     <div style={{
@@ -375,10 +428,10 @@ export const DashboardPage = () => {
                   position: 'relative',
                   backgroundColor: 'rgba(2, 2, 3, 0.82)',
                   backdropFilter: 'blur(16px)',
-                  border: `1px solid ${currentAvatarInfo.color}`,
+                  border: `1px solid ${avatarColor}`,
                   padding: '24px',
                   borderRadius: '4px',
-                  boxShadow: `0 0 16px ${currentAvatarInfo.glow}`,
+                  boxShadow: `0 0 16px ${avatarGlow}`,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -386,8 +439,8 @@ export const DashboardPage = () => {
                   gap: '16px'
                 }}>
                   {/* Cyber Corner Decals */}
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: '8px', height: '8px', borderLeft: `2px solid ${currentAvatarInfo.color}`, borderTop: `2px solid ${currentAvatarInfo.color}` }}></div>
-                  <div style={{ position: 'absolute', bottom: 0, right: 0, width: '8px', height: '8px', borderRight: `2px solid ${currentAvatarInfo.color}`, borderBottom: `2px solid ${currentAvatarInfo.color}` }}></div>
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '8px', height: '8px', borderLeft: `2px solid ${avatarColor}`, borderTop: `2px solid ${avatarColor}` }}></div>
+                  <div style={{ position: 'absolute', bottom: 0, right: 0, width: '8px', height: '8px', borderRight: `2px solid ${avatarColor}`, borderBottom: `2px solid ${avatarColor}` }}></div>
 
                   {/* Avatar Icon Wrapper */}
                   <div style={{
@@ -395,14 +448,22 @@ export const DashboardPage = () => {
                     height: '76px',
                     borderRadius: '50%',
                     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                    border: `2px solid ${currentAvatarInfo.color}`,
+                    border: `2px solid ${avatarColor}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '38px',
-                    boxShadow: `inset 0 0 15px ${currentAvatarInfo.glow}, 0 0 15px ${currentAvatarInfo.glow}`
+                    boxShadow: `inset 0 0 15px ${avatarGlow}, 0 0 15px ${avatarGlow}`
                   }}>
-                    {currentAvatarInfo.icon}
+                    {isCustomAvatar ? (
+                      <img 
+                        src={avatarId} 
+                        alt="PFP" 
+                        style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+                      />
+                    ) : (
+                      currentAvatarInfo.icon
+                    )}
                   </div>
 
                   <div>
@@ -435,7 +496,7 @@ export const DashboardPage = () => {
                         <span>780 / 1000</span>
                       </div>
                       <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-                        <div style={{ width: '78%', height: '100%', backgroundColor: currentAvatarInfo.color, boxShadow: `0 0 8px ${currentAvatarInfo.color}` }}></div>
+                        <div style={{ width: '78%', height: '100%', backgroundColor: avatarColor, boxShadow: `0 0 8px ${avatarColor}` }}></div>
                       </div>
                     </div>
                   </div>
@@ -826,6 +887,68 @@ export const DashboardPage = () => {
                         </span>
                       </button>
                     ))}
+
+                    {/* Custom PFP Upload Button */}
+                    <input 
+                      type="file" 
+                      ref={editFileInputRef} 
+                      accept="image/*" 
+                      style={{ display: 'none' }} 
+                      onChange={handleEditFileChange} 
+                    />
+                    
+                    <button
+                      type="button"
+                      onClick={() => editFileInputRef.current?.click()}
+                      style={{
+                        gridColumn: '1 / -1',
+                        padding: '12px',
+                        backgroundColor: editAvatarId.startsWith('data:image/') ? 'rgba(0, 242, 254, 0.05)' : 'rgba(255, 255, 255, 0.01)',
+                        border: editAvatarId.startsWith('data:image/') ? '1px solid var(--accent-cyan)' : '1px dashed rgba(255, 255, 255, 0.15)',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '12px',
+                        transition: 'all 0.3s',
+                        boxShadow: editAvatarId.startsWith('data:image/') ? '0 0 8px rgba(0, 242, 254, 0.2)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!editAvatarId.startsWith('data:image/')) {
+                          e.currentTarget.style.borderColor = 'var(--accent-cyan)';
+                          e.currentTarget.style.backgroundColor = 'rgba(0, 242, 254, 0.02)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!editAvatarId.startsWith('data:image/')) {
+                          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.01)';
+                        }
+                      }}
+                    >
+                      {editAvatarId.startsWith('data:image/') ? (
+                        <>
+                          <img 
+                            src={editAvatarId} 
+                            alt="Custom PFP" 
+                            style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--accent-cyan)' }} 
+                          />
+                          <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontSize: '9px', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>CUSTOM PHOTO ACTIVE</div>
+                            <div style={{ fontSize: '8px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>CLICK TO REPLACE</div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ fontSize: '18px' }}>📷</span>
+                          <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontSize: '9px', color: '#fff', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>UPLOAD CUSTOM PHOTO</div>
+                            <div style={{ fontSize: '8px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>PNG, JPG OR WEBP</div>
+                          </div>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
 

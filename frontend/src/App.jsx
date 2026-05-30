@@ -9,6 +9,7 @@ import { DashboardPage } from './components/DashboardPage';
 import { BrandIdentityPage } from './components/BrandIdentityPage';
 import { CyberCursor } from './components/CyberCursor';
 import { InteractiveBackgroundPage } from './components/InteractiveBackgroundPage';
+import { RedesignPage } from './components/RedesignPage';
 
 function App() {
   // Splash screen is enabled by default on the root route to show on refresh / startup
@@ -19,6 +20,16 @@ function App() {
   );
   const [view, setView] = useState('landing'); // landing | arena
   const [initialOpponent, setInitialOpponent] = useState(null);
+
+  // Check for path-based routing for different league scroll redesign page
+  if (window.location.pathname === '/redesign') {
+    return (
+      <>
+        <CyberCursor />
+        <RedesignPage />
+      </>
+    );
+  }
 
   // Check for path-based routing for wordmark testing staging page
   if (window.location.pathname === '/word') {

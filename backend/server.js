@@ -3,7 +3,32 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
+
+// Fallback to load from frontend/.env if local .env variables are missing
+if (!process.env.SUPABASE_URL && !process.env.VITE_SUPABASE_URL) {
+  require('dotenv').config({ path: path.join(__dirname, '../frontend/.env') });
+}
+
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+let supabase = null;
+if (supabaseUrl && supabaseKey) {
+  try {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('Supabase client successfully initialized with URL:', supabaseUrl);
+  } catch (err) {
+    console.error('Supabase initialization failed:', err.message);
+  }
+} else {
+  console.log('Running backend in local sandbox mode (missing Supabase credentials).');
+}
+
+// Global first blood indicator
+global.firstBloodFired = false;
 
 const app = express();
 app.use(cors());
@@ -61,15 +86,136 @@ const matches = new Map(); // match_id -> match state
 const matchmakingQueue = []; // Array of { socket, user }
 const socketUserMap = new Map(); // socket.id -> { user_id, match_id }
 
-// Language Piston Map
+// Language Piston Configuration
 const PISTON_LANG_MAP = {
   'cpp': { language: 'c++', version: '*' },
   'java': { language: 'java', version: '*' },
   'python': { language: 'python', version: '*' }
 };
 
+const TIME_MULTIPLIERS = {
+  'cpp': 1.0,
+  'java': 2.0,
+  'python': 3.0
+};
+
+const MAX_CODE_LENGTH = 100000; // 100KB Limit
+
+// Dynamic problem retrieval with fallback
+async function getMatchProblem() {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('problems')
+        .select('*');
+        
+      if (!error && data && data.length > 0) {
+        const randomIndex = Math.floor(Math.random() * data.length);
+        return data[randomIndex];
+      }
+    } catch (e) {
+      // Fallback
+    }
+  }
+  return SEED_PROBLEM;
+}
+
+// Database match creation
+async function dbCreateMatch(matchId, p1, p2, problemId) {
+  if (!supabase) return;
+  try {
+    await supabase.from('matches').insert({
+      id: matchId,
+      player_one: p1.id,
+      player_two: p2.id,
+      problem_id: problemId,
+      status: 'active',
+      player_one_elo_before: p1.elo || 1200,
+      player_two_elo_before: p2.elo || 1200
+    });
+  } catch (e) {
+    // Fail silently
+  }
+}
+
+// Database match termination & ELO synchronization
+async function dbEndMatch(matchId, winnerId, p1Stats, p2Stats, reason) {
+  if (!supabase) return;
+  try {
+    const eloChange = 15;
+    const p1EloAfter = p1Stats.id === winnerId ? (p1Stats.elo || 1200) + eloChange : (p1Stats.elo || 1200) - eloChange;
+    const p2EloAfter = p2Stats.id === winnerId ? (p2Stats.elo || 1200) + eloChange : (p2Stats.elo || 1200) - eloChange;
+
+    await supabase.from('matches').update({
+      winner: winnerId,
+      status: 'completed',
+      player_one_elo_after: p1EloAfter,
+      player_two_elo_after: p2EloAfter,
+      ended_at: new Date().toISOString()
+    }).eq('id', matchId);
+
+    // Helper to update ELO and record counts
+    const updateProfile = async (player, won) => {
+      try {
+        const { data } = await supabase.from('profiles').select('wins, losses').eq('id', player.id).maybeSingle();
+        const wins = (data?.wins || 0) + (won ? 1 : 0);
+        const losses = (data?.losses || 0) + (won ? 0 : 1);
+        const newElo = (player.elo || 1200) + (won ? eloChange : -eloChange);
+
+        await supabase.from('profiles').update({
+          elo: newElo,
+          wins,
+          losses
+        }).eq('id', player.id);
+      } catch (err) {
+        // Ignore
+      }
+    };
+
+    await updateProfile(p1Stats, p1Stats.id === winnerId);
+    await updateProfile(p2Stats, p2Stats.id === winnerId);
+  } catch (e) {
+    // Fail silently
+  }
+}
+
+// Database submission logging
+async function dbInsertSubmission(matchId, userId, language, code, verdict, casesPassed, totalCases, runTime = 0, memory = 0) {
+  if (!supabase) return;
+  try {
+    await supabase.from('submissions').insert({
+      match_id: matchId,
+      user_id: userId,
+      language: language,
+      code: code,
+      verdict: verdict,
+      hidden_cases_passed: casesPassed,
+      hidden_cases_total: totalCases,
+      execution_time_ms: runTime,
+      memory_used_kb: memory
+    });
+  } catch (e) {
+    // Fail silently
+  }
+}
+
+// Database anti-cheat event logger
+async function dbLogAntiCheat(matchId, userId, eventType, payload) {
+  if (!supabase) return;
+  try {
+    await supabase.from('anticheat_events').insert({
+      match_id: matchId,
+      user_id: userId,
+      event_type: eventType,
+      payload: payload
+    });
+  } catch (e) {
+    // Fail silently
+  }
+}
+
 // Execute code single case helper
-async function runPiston(code, language, input) {
+async function runPiston(code, language, input, runTimeout = 3000) {
   const langConfig = PISTON_LANG_MAP[language];
   if (!langConfig) {
     throw new Error(`Unsupported language: ${language}`);
@@ -81,7 +227,7 @@ async function runPiston(code, language, input) {
       version: langConfig.version,
       files: [{ content: code }],
       stdin: input,
-      run_timeout: 3000
+      run_timeout: runTimeout
     });
     return response.data;
   } catch (error) {
@@ -145,15 +291,34 @@ function endMatch(matchId, winnerId, reason) {
   const p1 = match.players[playerIds[0]];
   const p2 = match.players[playerIds[1]];
 
-  const winnerCode = winnerId === p1.id ? p1.code : p2.code;
-  const opponentCode = winnerId === p1.id ? p2.code : p1.code;
-
   io.to(matchId).emit('match:end', {
     winner_id: winnerId,
     reason: reason || 'Submission accepted or tiebreaker complete',
     p1_stats: { id: p1.id, progress: p1.progress, submissionsLeft: p1.submissionsLeft },
     p2_stats: { id: p2.id, progress: p2.progress, submissionsLeft: p2.submissionsLeft }
   });
+
+  // Database updates
+  dbEndMatch(matchId, winnerId, p1, p2, reason);
+
+  // Global announcements
+  const solveTime = Date.now() - match.createdAt;
+  if (!global.firstBloodFired) {
+    global.firstBloodFired = true;
+    io.to('broadcast').emit('global:first_blood', {
+      winner: winnerId === p1.id ? p1.username : p2.username,
+      loser: winnerId === p1.id ? p2.username : p1.username,
+      round_label: 'Round 1',
+      solve_time_ms: solveTime
+    });
+  } else {
+    io.to('broadcast').emit('global:match_complete', {
+      winner: winnerId === p1.id ? p1.username : p2.username,
+      loser: winnerId === p1.id ? p2.username : p1.username,
+      round_label: 'Round 1',
+      solve_time_ms: solveTime
+    });
+  }
 
   // Clean up references
   playerIds.forEach(pid => {
@@ -168,8 +333,11 @@ function endMatch(matchId, winnerId, reason) {
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
+  // Join global broadcast feed room automatically
+  socket.join('broadcast');
+
   // 1. Queue Matchmaking
-  socket.on('match:find', (userData) => {
+  socket.on('match:find', async (userData) => {
     // Remove if already in queue
     const existingIndex = matchmakingQueue.findIndex(item => item.user.id === userData.id);
     if (existingIndex !== -1) {
@@ -184,6 +352,9 @@ io.on('connection', (socket) => {
       const p1 = matchmakingQueue.shift();
       const p2 = matchmakingQueue.shift();
       const matchId = `match_${Date.now()}`;
+
+      // Select dynamic problem
+      const problem = await getMatchProblem();
 
       const matchState = {
         id: matchId,
@@ -208,7 +379,7 @@ io.on('connection', (socket) => {
             language: 'cpp'
           }
         },
-        problem: SEED_PROBLEM,
+        problem: problem,
         createdAt: Date.now()
       };
 
@@ -220,6 +391,9 @@ io.on('connection', (socket) => {
 
       p1.socket.join(matchId);
       p2.socket.join(matchId);
+
+      // Write match to database
+      await dbCreateMatch(matchId, p1.user, p2.user, problem.id);
 
       // Trigger matchmaking roulette assignment
       p1.socket.emit('match:found', { opponent: p2.user, match_id: matchId });
@@ -284,16 +458,23 @@ io.on('connection', (socket) => {
     const match = matches.get(meta.match_id);
     if (!match) return;
 
+    if (code && code.length > MAX_CODE_LENGTH) {
+      return socket.emit('submit:error', { reason: 'Code exceeds 100KB limit.' });
+    }
+
     socket.emit('testrun:compiling');
 
     try {
       const problem = match.problem;
       const testCases = problem.test_cases;
-      const results = [];
+      
+      const baseLimit = problem.time_limit_ms || 3000;
+      const multiplier = TIME_MULTIPLIERS[language] || 1.0;
+      const runTimeout = baseLimit * multiplier;
 
       // Run sample cases sequentially or parallel
       const runs = testCases.map(async (tc) => {
-        const out = await runPiston(code, language, tc.input);
+        const out = await runPiston(code, language, tc.input, runTimeout);
         const j = judgeSingleCase(out, tc.output);
         return {
           verdict: j.verdict,
@@ -326,19 +507,27 @@ io.on('connection', (socket) => {
       return socket.emit('submit:error', { reason: 'No submissions remaining.' });
     }
 
+    if (code && code.length > MAX_CODE_LENGTH) {
+      return socket.emit('submit:error', { reason: 'Code exceeds 100KB limit.' });
+    }
+
     socket.emit('submit:compiling');
 
     try {
       const problem = match.problem;
       const hiddenCases = problem.hidden_cases;
       
+      const baseLimit = problem.time_limit_ms || 3000;
+      const multiplier = TIME_MULTIPLIERS[language] || 1.0;
+      const runTimeout = baseLimit * multiplier;
+
       // Update code draft
       pState.code = code;
       pState.language = language;
 
       // Judge in parallel to avoid massive timeouts
       const judgePromises = hiddenCases.map(async (hc) => {
-        const out = await runPiston(code, language, hc.input);
+        const out = await runPiston(code, language, hc.input, runTimeout);
         return judgeSingleCase(out, hc.output);
       });
 
@@ -374,6 +563,17 @@ io.on('connection', (socket) => {
 
       pState.progress = casesPassed;
 
+      // Log submission to database
+      await dbInsertSubmission(
+        meta.match_id,
+        meta.user_id,
+        language,
+        code,
+        finalVerdict,
+        casesPassed,
+        hiddenCases.length
+      );
+
       // Send result back to player
       socket.emit('submit:result', {
         verdict: finalVerdict,
@@ -401,7 +601,7 @@ io.on('connection', (socket) => {
         const oppState = match.players[opponentId];
         
         if (pState.submissionsLeft === 0 && oppState.submissionsLeft === 0) {
-          // Both out of submissions, run tiebreaker
+          // Both players exhausted attempts, run tiebreaker
           const winnerId = evaluateTiebreaker(match);
           endMatch(meta.match_id, winnerId, 'Both players exhausted attempts. Evaluating score.');
         }
@@ -423,6 +623,44 @@ io.on('connection', (socket) => {
 
     const opponentId = Object.keys(match.players).find(id => id !== meta.user_id);
     endMatch(meta.match_id, opponentId, 'Rival forfeited the duel.');
+  });
+
+  // 8. Anti-cheat events logging
+  socket.on('anticheat:fullscreen_exit', ({ violation }) => {
+    const meta = socketUserMap.get(socket.id);
+    if (!meta) return;
+    dbLogAntiCheat(meta.match_id, meta.user_id, 'fullscreen_exit', { violation });
+  });
+
+  socket.on('anticheat:tab_switch', ({ count }) => {
+    const meta = socketUserMap.get(socket.id);
+    if (!meta) return;
+    dbLogAntiCheat(meta.match_id, meta.user_id, 'tab_switch', { count });
+  });
+
+  socket.on('anticheat:external_paste', (pasteDetails) => {
+    const meta = socketUserMap.get(socket.id);
+    if (!meta) return;
+    dbLogAntiCheat(meta.match_id, meta.user_id, 'external_paste', pasteDetails);
+  });
+
+  socket.on('anticheat:disqualify', ({ reason }) => {
+    const meta = socketUserMap.get(socket.id);
+    if (!meta) return;
+    dbLogAntiCheat(meta.match_id, meta.user_id, 'disqualify', { reason });
+    
+    // Forfeit the match for disqualified user
+    const match = matches.get(meta.match_id);
+    if (match) {
+      const opponentId = Object.keys(match.players).find(id => id !== meta.user_id);
+      endMatch(meta.match_id, opponentId, `Disqualified: ${reason}`);
+    }
+  });
+
+  // Explicit broadcast feed joiner
+  socket.on('broadcast:join', () => {
+    socket.join('broadcast');
+    console.log(`Socket ${socket.id} joined broadcast feed.`);
   });
 
   // Handle client disconnection

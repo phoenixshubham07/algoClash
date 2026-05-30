@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { InteractiveBackground } from './InteractiveBackground';
 import { supabase } from '../supabaseClient';
@@ -13,6 +13,35 @@ const AVATARS = [
   { id: 'biotic_core', name: 'BIOTIC_CORE', icon: '🧬', color: '#ec4899', glow: 'rgba(236, 72, 153, 0.4)' },
 ];
 
+const compressAndResizeImage = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = 128;
+        canvas.height = 128;
+        
+        const minSize = Math.min(img.width, img.height);
+        const sx = (img.width - minSize) / 2;
+        const sy = (img.height - minSize) / 2;
+        
+        ctx.drawImage(img, sx, sy, minSize, minSize, 0, 0, 128, 128);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => reject(new Error("Failed to load image element."));
+      img.src = e.target.result;
+    };
+    reader.onerror = (err) => reject(new Error("Failed to read file."));
+    reader.readAsDataURL(file);
+  });
+};
+
 export const OnboardingPage = () => {
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
@@ -20,6 +49,27 @@ export const OnboardingPage = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('FILE REJECTED: Must be an image file.');
+      return;
+    }
+
+    try {
+      const compressed = await compressAndResizeImage(file);
+      setSelectedAvatar(compressed);
+      setErrorMsg('');
+    } catch (err) {
+      console.error(err);
+      setErrorMsg('IMAGE ERROR: Failed to process image file.');
+    }
+  };
 
   // Auto-fill a starting suggestion from Google name if available
   useEffect(() => {
@@ -283,6 +333,68 @@ export const OnboardingPage = () => {
                     </span>
                   </button>
                 ))}
+
+                {/* Custom PFP Upload Button */}
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  accept="image/*" 
+                  style={{ display: 'none' }} 
+                  onChange={handleFileChange} 
+                />
+                
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    gridColumn: 'span 3',
+                    padding: '12px',
+                    backgroundColor: selectedAvatar.startsWith('data:image/') ? 'rgba(0, 242, 254, 0.05)' : 'rgba(255, 255, 255, 0.01)',
+                    border: selectedAvatar.startsWith('data:image/') ? '1px solid var(--accent-cyan)' : '1px dashed rgba(255, 255, 255, 0.15)',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    transition: 'all 0.3s',
+                    boxShadow: selectedAvatar.startsWith('data:image/') ? '0 0 12px rgba(0, 242, 254, 0.2)' : 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!selectedAvatar.startsWith('data:image/')) {
+                      e.currentTarget.style.borderColor = 'var(--accent-cyan)';
+                      e.currentTarget.style.backgroundColor = 'rgba(0, 242, 254, 0.02)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!selectedAvatar.startsWith('data:image/')) {
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.01)';
+                    }
+                  }}
+                >
+                  {selectedAvatar.startsWith('data:image/') ? (
+                    <>
+                      <img 
+                        src={selectedAvatar} 
+                        alt="Custom PFP" 
+                        style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--accent-cyan)' }} 
+                      />
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ fontSize: '9px', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>CUSTOM PHOTO ACTIVE</div>
+                        <div style={{ fontSize: '8px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>CLICK TO REPLACE</div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: '18px' }}>📷</span>
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ fontSize: '9px', color: '#fff', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>UPLOAD CUSTOM PHOTO</div>
+                        <div style={{ fontSize: '8px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>PNG, JPG OR WEBP</div>
+                      </div>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 
