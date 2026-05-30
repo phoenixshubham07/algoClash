@@ -14,6 +14,22 @@ const AVATARS = [
   { id: 'biotic_core', name: 'BIOTIC_CORE', icon: '🧬', color: '#ec4899', glow: 'rgba(236, 72, 153, 0.4)' },
 ];
 
+const RECENT_DUELS = [
+  { id: 1, rival: 'xX_CodeGhost_Xx', outcome: 'VICTORY', delta: '+24 ELO', lang: 'C++', time: '3m 45s', date: '2 HOURS AGO' },
+  { id: 2, rival: 'ZeroCool', outcome: 'VICTORY', delta: '+18 ELO', lang: 'Python', time: '5m 12s', date: '4 HOURS AGO' },
+  { id: 3, rival: 'BitSlayer', outcome: 'DEFEAT', delta: '-12 ELO', lang: 'Java', time: '8m 04s', date: '1 DAY AGO' },
+  { id: 4, rival: 'cyber_sam', outcome: 'VICTORY', delta: '+22 ELO', lang: 'C++', time: '2m 19s', date: '2 DAYS AGO' },
+  { id: 5, rival: 'hack_overflow', outcome: 'VICTORY', delta: '+15 ELO', lang: 'Python', time: '4m 30s', date: '2 DAYS AGO' },
+];
+
+const LEADERBOARD = [
+  { rank: 1, name: 'master_coder', rating: '2,120 ELO', status: 'online', color: 'var(--accent-cyan)' },
+  { rank: 2, name: 'null_pointer', rating: '1,980 ELO', status: 'busy', color: 'var(--accent-crimson)' },
+  { rank: 3, name: 'shubham_barik', rating: '1,840 ELO', status: 'online', color: 'var(--accent-yellow)' },
+  { rank: 4, name: 'cyber_ninja', rating: '1,750 ELO', status: 'offline', color: 'var(--text-muted)' },
+  { rank: 5, name: 'algo_lord', rating: '1,690 ELO', status: 'online', color: 'var(--accent-cyan)' },
+];
+
 export const DashboardPage = () => {
   // Active User Profile
   const [username, setUsername] = useState('');
@@ -203,8 +219,6 @@ export const DashboardPage = () => {
       if (supabase && supabase.auth && sessionUser) {
         // Delete profile row in Supabase database
         await supabase.from('profiles').delete().eq('id', sessionUser.id);
-        
-        // Triggers signout (Vercel deployment env will handle deleting matching records)
         await supabase.auth.signOut();
       }
 
@@ -249,7 +263,7 @@ export const DashboardPage = () => {
       minHeight: '100vh',
       backgroundColor: '#020203',
       color: '#f8fafc',
-      padding: '60px 24px',
+      padding: '40px 24px',
       overflow: 'hidden',
       fontFamily: "'Space Grotesk', sans-serif"
     }}>
@@ -260,10 +274,10 @@ export const DashboardPage = () => {
       <div className="scanlines"></div>
 
       {/* Decals */}
-      <div style={{ position: 'absolute', top: '5%', right: '10%', width: '500px', height: '500px', borderRadius: '9999px', background: 'radial-gradient(circle, rgba(0, 242, 254, 0.04) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none' }}></div>
-      <div style={{ position: 'absolute', bottom: '5%', left: '5%', width: '400px', height: '400px', borderRadius: '9999px', background: 'radial-gradient(circle, rgba(244, 63, 94, 0.03) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none' }}></div>
+      <div style={{ position: 'absolute', top: '5%', right: '10%', width: '600px', height: '600px', borderRadius: '9999px', background: 'radial-gradient(circle, rgba(0, 242, 254, 0.03) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none' }}></div>
+      <div style={{ position: 'absolute', bottom: '5%', left: '5%', width: '500px', height: '500px', borderRadius: '9999px', background: 'radial-gradient(circle, rgba(244, 63, 94, 0.02) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none' }}></div>
 
-      <div style={{ position: 'relative', zIndex: 10, maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      <div style={{ position: 'relative', zIndex: 10, maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
         {/* HEADER SECTION */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', paddingBottom: '16px' }}>
@@ -274,8 +288,8 @@ export const DashboardPage = () => {
                 COMMAND_CENTER
               </span>
             </div>
-            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
-              LOC: STAGING_SYS // PORT_NODE_ACTIVE
+            <p style={{ fontSize: '10px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', marginTop: '4px', opacity: 0.8 }}>
+              LOC: STAGING_SYS // PORT_NODE_ACTIVE // LATENCY: 14MS
             </p>
           </div>
           
@@ -302,100 +316,315 @@ export const DashboardPage = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.3 }}
-              style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full items-start"
             >
-              {/* HERO GREETING BANNER */}
-              <div
-                style={{
-                  position: 'relative',
-                  backgroundColor: 'rgba(2, 2, 3, 0.85)',
-                  backdropFilter: 'blur(16px)',
-                  border: '1px solid rgba(0, 242, 254, 0.15)',
-                  boxShadow: '0 0 24px rgba(0, 242, 254, 0.06)',
-                  padding: '32px 36px',
-                  clipPath: 'polygon(0% 0%, 97% 0%, 100% 24px, 100% 100%, 3% 100%, 0% calc(100% - 24px))',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: '24px'
-                }}
-              >
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '50px', backgroundColor: 'var(--accent-cyan)' }}></div>
-                <div style={{ position: 'absolute', bottom: 0, right: 0, width: '4px', height: '50px', backgroundColor: 'var(--accent-crimson)' }}></div>
+              
+              {/* LEFT COLUMN: IDENTITY & OPERATIONS */}
+              <div className="lg:col-span-3 flex flex-col gap-6">
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                  {/* Big Cyber Badge */}
+                {/* IDENTITY PROFILE CARD */}
+                <div style={{
+                  position: 'relative',
+                  backgroundColor: 'rgba(2, 2, 3, 0.82)',
+                  backdropFilter: 'blur(16px)',
+                  border: `1px solid ${currentAvatarInfo.color}`,
+                  padding: '24px',
+                  borderRadius: '4px',
+                  boxShadow: `0 0 16px ${currentAvatarInfo.glow}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  gap: '16px'
+                }}>
+                  {/* Cyber Corner Decals */}
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '8px', height: '8px', borderLeft: `2px solid ${currentAvatarInfo.color}`, borderTop: `2px solid ${currentAvatarInfo.color}` }}></div>
+                  <div style={{ position: 'absolute', bottom: 0, right: 0, width: '8px', height: '8px', borderRight: `2px solid ${currentAvatarInfo.color}`, borderBottom: `2px solid ${currentAvatarInfo.color}` }}></div>
+
+                  {/* Avatar Icon Wrapper */}
                   <div style={{
-                    width: '64px',
-                    height: '64px',
+                    width: '76px',
+                    height: '76px',
                     borderRadius: '50%',
-                    backgroundColor: 'rgba(255,255,255,0.02)',
-                    border: `1px solid ${currentAvatarInfo.color}`,
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    border: `2px solid ${currentAvatarInfo.color}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '32px',
-                    boxShadow: `0 0 16px ${currentAvatarInfo.glow}`
+                    fontSize: '38px',
+                    boxShadow: `inset 0 0 15px ${currentAvatarInfo.glow}, 0 0 15px ${currentAvatarInfo.glow}`
                   }}>
                     {currentAvatarInfo.icon}
                   </div>
 
                   <div>
-                    <span style={{ fontSize: '10px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)', fontWeight: 'bold', letterSpacing: '0.25em' }}>
-                      📡 ACCESS CODE AUTHD: @{username}
+                    <h2 className="font-display glow-cyan text-white text-lg font-black tracking-wide uppercase">
+                      {displayName}
+                    </h2>
+                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                      @{username}
                     </span>
-                    <h1 className="font-display glow-cyan" style={{ fontSize: '34px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#fff', marginTop: '6px' }}>
-                      HELLO, <span style={{ color: 'var(--accent-cyan)' }}>{displayName}</span>
-                    </h1>
+                  </div>
+
+                  {/* Level & Rank Info */}
+                  <div style={{
+                    width: '100%',
+                    borderTop: '1px dashed rgba(255, 255, 255, 0.08)',
+                    paddingTop: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ color: 'var(--accent-yellow)' }}>RANK: SPECIALIST</span>
+                      <span style={{ color: 'var(--accent-cyan)' }}>LVL 4</span>
+                    </div>
+
+                    {/* XP Progress Bar */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: 'var(--text-muted)' }}>
+                        <span>SYSTEM XP PROGRESS</span>
+                        <span>780 / 1000</span>
+                      </div>
+                      <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ width: '78%', height: '100%', backgroundColor: currentAvatarInfo.color, boxShadow: `0 0 8px ${currentAvatarInfo.color}` }}></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: '8px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', alignSelf: 'flex-start', textAlign: 'left', width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                    <div>REGION: AMER_EAST</div>
+                    <div>SECTOR: HUD_GRID_6</div>
                   </div>
                 </div>
 
-                <div>
-                  <CyberButton variant="primary" size="lg" onClick={() => window.location.href = '/'}>
+                {/* ARENA DEPLOYMENT ACTION */}
+                <div style={{
+                  backgroundColor: 'rgba(2, 2, 3, 0.7)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  padding: '20px',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  position: 'relative'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>
+                      ⚠️ DEPLOYMENT PROTOCOL
+                    </span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  </div>
+
+                  <p style={{ fontSize: '10.5px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                    Queue status clear. Prepare for high-stakes 1v1 algorithmic combat.
+                  </p>
+
+                  <CyberButton variant="primary" size="md" onClick={() => window.location.href = '/'} style={{ width: '100%' }}>
                     ENTER BATTLEFIELD
                   </CyberButton>
                 </div>
+
               </div>
 
-              {/* STATS & DIAGNOSTICS */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+              {/* CENTER COLUMN: METRICS & RECENT DUELS */}
+              <div className="lg:col-span-6 flex flex-col gap-6">
                 
                 {/* COMBAT RECORDS */}
                 <div style={{
                   backgroundColor: 'rgba(2, 2, 3, 0.7)',
-                  border: '1px solid rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
                   padding: '24px',
                   borderRadius: '4px',
                   position: 'relative'
                 }}>
                   <div style={{ borderBottom: '1px dashed rgba(255,255,255,0.08)', paddingBottom: '10px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>// COMBAT_STATS.DAT</span>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>RANK: SPECIALIST</span>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>COM_LINK: ACTIVE</span>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>CLASH RATING (ELO)</span>
-                      <span className="glow-cyan" style={{ fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '18px', color: 'var(--accent-cyan)' }}>1,540</span>
+                  {/* Grid showing ELO and stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '9px', fontFamily: 'var(--font-mono)' }}>RATING (ELO)</span>
+                      <span className="glow-cyan text-xl md:text-2xl font-black text-white" style={{ fontFamily: 'var(--font-mono)' }}>
+                        1,540
+                      </span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>WIN / LOSS RATIO</span>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>14 / 2 (87.5%)</span>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '9px', fontFamily: 'var(--font-mono)' }}>WIN / LOSS</span>
+                      <span className="text-xl md:text-2xl font-black text-white" style={{ fontFamily: 'var(--font-mono)' }}>
+                        14 / 2
+                      </span>
+                      <span style={{ fontSize: '8.5px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)' }}>(87.5% WR)</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>ACCURACY RATING</span>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '14px', color: 'var(--accent-yellow)' }}>94.2%</span>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '9px', fontFamily: 'var(--font-mono)' }}>ACCURACY</span>
+                      <span className="text-xl md:text-2xl font-black text-white" style={{ fontFamily: 'var(--font-mono)' }}>
+                        94.2%
+                      </span>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--text-muted)' }}>
-                        <span>EXPERIENCE PROGRESSION</span>
-                        <span>780 / 1000 XP</span>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '9px', fontFamily: 'var(--font-mono)' }}>AVG SPEED</span>
+                      <span className="text-xl md:text-2xl font-black text-white" style={{ fontFamily: 'var(--font-mono)' }}>
+                        248ms
+                      </span>
+                      <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>PER PASS</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RECENT DUELS TABLE */}
+                <div style={{
+                  backgroundColor: 'rgba(2, 2, 3, 0.7)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  padding: '24px',
+                  borderRadius: '4px',
+                  position: 'relative'
+                }}>
+                  <div style={{ borderBottom: '1px dashed rgba(255,255,255,0.08)', paddingBottom: '10px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>// RECENT_COMBAT_HISTORY.LOG</span>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>TACTICAL_FEED</span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
+                      <thead>
+                        <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                          <th className="pb-3 font-normal">RIVAL</th>
+                          <th className="pb-3 font-normal">OUTCOME</th>
+                          <th className="pb-3 font-normal">DELTA</th>
+                          <th className="pb-3 font-normal">LANG</th>
+                          <th className="pb-3 font-normal text-right">DURATION</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {RECENT_DUELS.map(duel => (
+                          <tr 
+                            key={duel.id} 
+                            style={{ 
+                              borderBottom: '1px solid rgba(255,255,255,0.02)',
+                              color: '#fff'
+                            }}
+                            className="hover:bg-[rgba(255,255,255,0.02)] transition-colors"
+                          >
+                            <td className="py-3 font-bold">{duel.rival}</td>
+                            <td className="py-3">
+                              <span style={{ 
+                                color: duel.outcome === 'VICTORY' ? 'var(--accent-cyan)' : 'var(--accent-crimson)',
+                                textShadow: duel.outcome === 'VICTORY' ? '0 0 8px rgba(0, 242, 254, 0.3)' : 'none'
+                              }}>
+                                {duel.outcome}
+                              </span>
+                            </td>
+                            <td className="py-3" style={{ color: duel.outcome === 'VICTORY' ? 'var(--accent-cyan)' : 'var(--accent-crimson)' }}>
+                              {duel.delta}
+                            </td>
+                            <td className="py-3 text-slate-400">{duel.lang}</td>
+                            <td className="py-3 text-right text-slate-500">{duel.time}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* RIGHT COLUMN: TELEMETRY, LEADERBOARD, & SERVERS */}
+              <div className="lg:col-span-3 flex flex-col gap-6">
+                
+                {/* SERVER NODES DIAGNOSTICS */}
+                <div style={{
+                  backgroundColor: 'rgba(2, 2, 3, 0.7)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  padding: '20px',
+                  borderRadius: '4px'
+                }}>
+                  <div style={{ borderBottom: '1px dashed rgba(255, 255, 255, 0.08)', paddingBottom: '8px', marginBottom: '14px' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>
+                      // NODE_DIAGNOSTICS
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'var(--font-mono)', fontSize: '10.5px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="text-slate-400">droplet-us-east</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span className="text-white">9MS [STABLE]</span>
                       </div>
-                      <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-                        <div style={{ width: '78%', height: '100%', backgroundColor: 'var(--accent-cyan)', boxShadow: '0 0 8px var(--accent-cyan)' }}></div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="text-slate-400">droplet-eu-west</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        <span className="text-white">34MS [HIGH_LOAD]</span>
                       </div>
                     </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="text-slate-400">droplet-ap-south</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span className="text-white">12MS [STABLE]</span>
+                      </div>
+                    </div>
+
+                    {/* Server capacity bars */}
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px', marginTop: '4px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '9px', color: 'var(--text-secondary)' }}>
+                      <div>QUEUE_SIZE: 14</div>
+                      <div>ACTIVE_DUELS: 82</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* LIVE LEADERBOARD */}
+                <div style={{
+                  backgroundColor: 'rgba(2, 2, 3, 0.7)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  padding: '20px',
+                  borderRadius: '4px'
+                }}>
+                  <div style={{ borderBottom: '1px dashed rgba(255, 255, 255, 0.08)', paddingBottom: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--accent-yellow)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>
+                      // MASTER_LEADERBOARD
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
+                    {LEADERBOARD.map(player => (
+                      <div 
+                        key={player.rank} 
+                        style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          paddingBottom: '6px',
+                          borderBottom: '1px solid rgba(255,255,255,0.02)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '9px' }}>{player.rank}</span>
+                          <span style={{ color: player.name === username ? 'var(--accent-cyan)' : '#fff', fontWeight: player.name === username ? 'bold' : 'normal' }}>
+                            {player.name}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{player.rating}</span>
+                          <span 
+                            className="w-1.5 h-1.5 rounded-full" 
+                            style={{ 
+                              backgroundColor: player.status === 'online' ? '#10b981' : player.status === 'busy' ? '#f43f5e' : '#6b7280' 
+                            }}
+                          ></span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -403,40 +632,36 @@ export const DashboardPage = () => {
                 <div style={{
                   backgroundColor: 'rgba(2, 2, 3, 0.7)',
                   border: '1px solid rgba(255,255,255,0.05)',
-                  padding: '24px',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between'
+                  padding: '20px',
+                  borderRadius: '4px'
                 }}>
-                  <div>
-                    <div style={{ borderBottom: '1px dashed rgba(255,255,255,0.08)', paddingBottom: '10px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '11px', color: 'var(--accent-crimson)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>// SYSTEM_TELEMETRY.LOG</span>
-                      <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>LIVE_FEED</span>
-                    </div>
+                  <div style={{ borderBottom: '1px dashed rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--accent-crimson)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>// SYSTEM_TELEMETRY.LOG</span>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>LIVE</span>
+                  </div>
 
-                    <div style={{
-                      height: '110px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                      border: '1px solid rgba(255,255,255,0.02)',
-                      padding: '10px',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '9px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      overflowY: 'auto'
-                    }}>
-                      {systemLogs.map((log, idx) => (
-                        <div key={idx} style={{ color: log.includes('🚨') ? 'var(--accent-crimson)' : log.includes('🛡️') || log.includes('🟢') ? 'var(--accent-cyan)' : '#94a3b8' }}>
-                          {log}
-                        </div>
-                      ))}
-                    </div>
+                  <div style={{
+                    height: '92px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                    border: '1px solid rgba(255,255,255,0.02)',
+                    padding: '8px 10px',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '9px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '5px',
+                    overflowY: 'auto'
+                  }}>
+                    {systemLogs.map((log, idx) => (
+                      <div key={idx} style={{ color: log.includes('🚨') ? 'var(--accent-crimson)' : log.includes('🛡️') || log.includes('🟢') ? 'var(--accent-cyan)' : '#94a3b8' }}>
+                        {log}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
               </div>
+
             </motion.div>
           ) : (
             <motion.div

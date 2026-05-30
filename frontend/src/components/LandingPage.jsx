@@ -9,6 +9,10 @@ import { LogoWordmark } from './LogoWordmark';
 export const LandingPage = ({ onNavigateToArena }) => {
   const [activeCompareTab, setActiveCompareTab] = useState('leetcode');
   const [scrolled, setScrolled] = useState(false);
+  const [isHeaderHovered, setIsHeaderHovered] = useState(false);
+  const [activeSection, setActiveSection] = useState('logo-fold');
+  const [latency, setLatency] = useState(12);
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,9 +21,38 @@ export const LandingPage = ({ onNavigateToArena }) => {
       } else {
         setScrolled(false);
       }
+
+      // Scroll Spy to track current visible section
+      const sections = ['logo-fold', 'tech-moat', 'ui-preview', 'combat-contrast'];
+      let currentSection = 'logo-fold';
+      
+      for (const section of sections) {
+        const el = document.getElementById(section);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= window.innerHeight * 0.45) {
+            currentSection = section;
+          }
+        }
+      }
+      setActiveSection(currentSection);
     };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
+    // Run initially
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLatency(prev => {
+        const delta = Math.random() > 0.5 ? 1 : -1;
+        const next = prev + delta;
+        return next >= 8 && next <= 18 ? next : 12;
+      });
+    }, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   const comparisonData = {
@@ -250,57 +283,260 @@ export const LandingPage = ({ onNavigateToArena }) => {
       <div className="scanlines"></div>
 
       {/* HEADER / NAVIGATION BAR */}
-      <header style={{
-        position: 'fixed',
-        top: '16px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 100,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '14px 40px',
-        width: '90%',
-        maxWidth: '1300px',
-        backgroundColor: 'rgba(10, 10, 12, 0.42)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(0, 242, 254, 0.22)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8), 0 0 25px rgba(0, 242, 254, 0.12), inset 0 0 12px rgba(0, 242, 254, 0.06)',
-        clipPath: 'polygon(0% 0%, 98% 0%, 100% 12px, 100% 100%, 2% 100%, 0% calc(100% - 12px))',
-        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-      }}>
-        {/* HUD Frame Decorative Corner Points */}
-        <div style={{ position: 'absolute', top: 0, left: '20px', width: '40px', height: '2px', backgroundColor: 'var(--accent-cyan)' }}></div>
-        <div style={{ position: 'absolute', bottom: 0, right: '20px', width: '40px', height: '2px', backgroundColor: 'var(--accent-crimson)' }}></div>
+      <header 
+        onMouseEnter={() => setIsHeaderHovered(true)}
+        onMouseLeave={() => setIsHeaderHovered(false)}
+        style={{
+          position: 'fixed',
+          top: scrolled ? '12px' : '22px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 100,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: scrolled ? '10px 30px' : '16px 40px',
+          width: scrolled ? '82%' : '90%',
+          maxWidth: scrolled ? '1120px' : '1300px',
+          backgroundColor: scrolled ? 'rgba(5, 5, 7, 0.85)' : 'rgba(10, 10, 12, 0.35)',
+          backdropFilter: scrolled ? 'blur(28px)' : 'blur(16px)',
+          border: scrolled ? '1px solid rgba(0, 242, 254, 0.45)' : '1px solid rgba(0, 242, 254, 0.15)',
+          boxShadow: scrolled 
+            ? '0 12px 40px rgba(0, 0, 0, 0.95), 0 0 30px rgba(0, 242, 254, 0.22), inset 0 0 16px rgba(0, 242, 254, 0.12)' 
+            : '0 8px 32px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 242, 254, 0.08), inset 0 0 8px rgba(0, 242, 254, 0.03)',
+          clipPath: scrolled 
+            ? 'polygon(0% 0%, 99% 0%, 100% 8px, 100% 100%, 1% 100%, 0% calc(100% - 8px))' 
+            : 'polygon(0% 0%, 98% 0%, 100% 12px, 100% 100%, 2% 100%, 0% calc(100% - 12px))',
+          transition: 'all 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Subtle Horizontal Laser Scanner Sweep */}
+        <div 
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(90deg, transparent, rgba(0, 242, 254, 0.03), rgba(0, 242, 254, 0.12), rgba(0, 242, 254, 0.03), transparent)',
+            width: '30%',
+            height: '100%',
+            pointerEvents: 'none',
+            transform: 'skewX(-30deg)'
+          }}
+          className="animate-slice-sweep"
+        />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {/* HUD Frame Corner Brackets */}
+        {/* Top-Left */}
+        <div style={{
+          position: 'absolute',
+          top: '6px',
+          left: '6px',
+          width: '10px',
+          height: '10px',
+          borderLeft: '2px solid var(--accent-cyan)',
+          borderTop: '2px solid var(--accent-cyan)',
+          transform: isHeaderHovered ? 'translate(-2px, -2px)' : 'translate(0, 0)',
+          transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          pointerEvents: 'none',
+          opacity: 0.8
+        }} />
+        
+        {/* Top-Right (adjusted horizontal spacing dynamically to avoid clip-path cuts) */}
+        <div style={{
+          position: 'absolute',
+          top: '6px',
+          right: scrolled ? '14px' : '22px',
+          width: '10px',
+          height: '10px',
+          borderRight: '2px solid var(--accent-cyan)',
+          borderTop: '2px solid var(--accent-cyan)',
+          transform: isHeaderHovered ? 'translate(2px, -2px)' : 'translate(0, 0)',
+          transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), right 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
+          pointerEvents: 'none',
+          opacity: 0.8
+        }} />
+
+        {/* Bottom-Left */}
+        <div style={{
+          position: 'absolute',
+          bottom: '6px',
+          left: scrolled ? '14px' : '22px',
+          width: '10px',
+          height: '10px',
+          borderLeft: '2px solid var(--accent-crimson)',
+          borderBottom: '2px solid var(--accent-crimson)',
+          transform: isHeaderHovered ? 'translate(-2px, 2px)' : 'translate(0, 0)',
+          transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), left 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
+          pointerEvents: 'none',
+          opacity: 0.8
+        }} />
+
+        {/* Bottom-Right */}
+        <div style={{
+          position: 'absolute',
+          bottom: '6px',
+          right: '6px',
+          width: '10px',
+          height: '10px',
+          borderRight: '2px solid var(--accent-crimson)',
+          borderBottom: '2px solid var(--accent-crimson)',
+          transform: isHeaderHovered ? 'translate(2px, 2px)' : 'translate(0, 0)',
+          transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          pointerEvents: 'none',
+          opacity: 0.8
+        }} />
+
+        {/* HUD Original Frame Top/Bottom Accents */}
+        <div style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: scrolled ? '50px' : '70px', 
+          width: scrolled ? '30px' : '50px', 
+          height: '2px', 
+          backgroundColor: 'var(--accent-cyan)',
+          transition: 'all 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
+          opacity: 0.6
+        }}></div>
+        <div style={{ 
+          position: 'absolute', 
+          bottom: 0, 
+          right: scrolled ? '50px' : '70px', 
+          width: scrolled ? '30px' : '50px', 
+          height: '2px', 
+          backgroundColor: 'var(--accent-crimson)',
+          transition: 'all 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
+          opacity: 0.6
+        }}></div>
+
+        <div 
+          onMouseEnter={() => setIsLogoHovered(true)}
+          onMouseLeave={() => setIsLogoHovered(false)}
+          style={{ display: 'flex', alignItems: 'center', gap: '14px', position: 'relative', zIndex: 10 }}
+        >
           {/* Small 18-degree mini clashing icon */}
           <div style={{ display: 'flex', gap: '2px', height: '18px', width: '26px' }}>
-            <div style={{ transform: 'rotate(18deg) scale(0.65)', transformOrigin: 'right top' }}>{renderCursor('cyan', true)}</div>
-            <div style={{ transform: 'rotate(-18deg) scale(0.65)', transformOrigin: 'left top' }}>{renderCursor('crimson', false)}</div>
+            <motion.div 
+              animate={isLogoHovered ? {
+                x: [0, 5, -2, 0],
+                rotate: [18, 30, 12, 18],
+                scale: [0.65, 0.72, 0.6, 0.65]
+              } : {}}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+              style={{ transformOrigin: 'right top', display: 'inline-block' }}
+            >
+              {renderCursor('cyan', true)}
+            </motion.div>
+            <motion.div 
+              animate={isLogoHovered ? {
+                x: [0, -5, 2, 0],
+                rotate: [-18, -30, -12, -18],
+                scale: [0.65, 0.72, 0.6, 0.65]
+              } : {}}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+              style={{ transformOrigin: 'left top', display: 'inline-block' }}
+            >
+              {renderCursor('crimson', false)}
+            </motion.div>
           </div>
-          <LogoWordmark fontSize="18px" />
-          <span style={{ fontSize: '8px', color: 'rgba(0, 242, 254, 0.6)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(0, 242, 254, 0.3)', padding: '2px 6px', borderRadius: '2px', letterSpacing: '0.1em' }}>
-            SYS_LOC: DUEL_STAGING
+          <LogoWordmark fontSize="17px" />
+          
+          {/* Live Telemetry Panel */}
+          <span 
+            style={{ 
+              fontSize: '8px', 
+              color: 'rgba(0, 242, 254, 0.85)', 
+              fontFamily: 'var(--font-mono)', 
+              border: '1px solid rgba(0, 242, 254, 0.3)', 
+              padding: '3px 8px', 
+              borderRadius: '3px', 
+              letterSpacing: '0.08em',
+              backgroundColor: 'rgba(0, 242, 254, 0.05)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: 'inset 0 0 6px rgba(0, 242, 254, 0.05)',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <motion.span 
+              animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+              style={{ 
+                width: '5px', 
+                height: '5px', 
+                borderRadius: '50%', 
+                backgroundColor: '#10b981', 
+                boxShadow: '0 0 6px #10b981'
+              }} 
+            />
+            SYS_LOC: DUEL_STAGING // RTT: {latency}MS // PORT: OK
           </span>
         </div>
 
-        <div style={{ display: 'flex', gap: '32px', fontSize: '10px', fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>
-          <a href="#logo-fold" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '4px' }} className="cyber-glitch-text">
-            <span style={{ color: 'var(--accent-cyan)' }}>//</span> IDENTITY
-          </a>
-          <a href="#tech-moat" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '4px' }} className="cyber-glitch-text">
-            <span style={{ color: 'var(--accent-cyan)' }}>//</span> ANTI-CHEAT
-          </a>
-          <a href="#ui-preview" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '4px' }} className="cyber-glitch-text">
-            <span style={{ color: 'var(--accent-cyan)' }}>//</span> IN-GAME HUD
-          </a>
-          <a href="#combat-contrast" style={{ color: 'var(--text-secondary)', textDecoration: 'none', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '4px' }} className="cyber-glitch-text">
-            <span style={{ color: 'var(--accent-cyan)' }}>//</span> COMBAT
-          </a>
+        {/* Scroll-Spy Highlighted Links */}
+        <div style={{ display: 'flex', gap: '28px', fontSize: '10px', fontWeight: 'bold', fontFamily: 'var(--font-mono)', position: 'relative', zIndex: 10 }}>
+          {[
+            { id: 'logo-fold', label: 'IDENTITY' },
+            { id: 'tech-moat', label: 'ANTI-CHEAT' },
+            { id: 'ui-preview', label: 'IN-GAME HUD' },
+            { id: 'combat-contrast', label: 'COMBAT' }
+          ].map((item) => {
+            const isActive = activeSection === item.id;
+            return (
+              <a 
+                key={item.id}
+                href={`#${item.id}`} 
+                style={{ 
+                  color: isActive ? '#fff' : 'var(--text-secondary)', 
+                  opacity: isActive ? 1 : 0.6,
+                  textDecoration: 'none', 
+                  letterSpacing: '0.15em', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px',
+                  position: 'relative',
+                  padding: '4px 0',
+                  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                }} 
+                className="cyber-glitch-text"
+              >
+                <span style={{ 
+                  color: isActive ? 'var(--accent-cyan)' : 'transparent',
+                  textShadow: isActive ? '0 0 8px var(--accent-cyan)' : 'none',
+                  transition: 'color 0.3s ease',
+                  marginRight: isActive ? '0px' : '-8px'
+                }}>
+                  //
+                </span>
+                <span style={{ 
+                  color: isActive ? '#fff' : 'var(--text-secondary)',
+                  textShadow: isActive ? '0 0 10px rgba(255, 255, 255, 0.4)' : 'none',
+                  fontWeight: isActive ? '700' : 'normal'
+                }}>
+                  {item.label}
+                </span>
+
+                {isActive && (
+                  <motion.div 
+                    layoutId="activeNavUnderline"
+                    style={{
+                      position: 'absolute',
+                      bottom: '-2px',
+                      left: 0,
+                      right: 0,
+                      height: '2px',
+                      background: 'linear-gradient(90deg, var(--accent-cyan), var(--accent-crimson))',
+                      boxShadow: '0 0 8px var(--accent-cyan)'
+                    }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </a>
+            );
+          })}
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative', zIndex: 10 }}>
           <a href="/login" style={{ textDecoration: 'none' }}>
             <CyberButton variant="warning" size="sm">
               LOG IN
